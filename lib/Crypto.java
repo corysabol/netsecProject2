@@ -50,7 +50,7 @@ class Crypto {
         this.cipherAlgorithm = "DES";
         break;
       case RSA:
-        this.cipherAlgorithm = "RAS";
+        this.cipherAlgorithm = "RSA";
         break;
       default:
         this.cipherAlgorithm = "DES";

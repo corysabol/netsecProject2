@@ -3,6 +3,12 @@ import java.net.*;
  
 class TCPClient {
   public static void main(String argv[]) throws Exception {
+
+    // instance of crypto helper
+    Crypto DES = new Crypto();
+    // set up the DES cypher
+    DES.setCrypto(Crypto.CIPHER_ALGORITHM.DES);
+
     String sentence;
     String modifiedSentence;
     BufferedReader inFromUser = new BufferedReader( new InputStreamReader(System.in));
@@ -16,5 +22,6 @@ class TCPClient {
     System.out.println("FROM SERVER: " + modifiedSentence);
     
     clientSocket.close();
+
   }
 }

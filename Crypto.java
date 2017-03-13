@@ -18,15 +18,6 @@ class Crypto {
    *  - RSA Encryption
    *  - RSA Decryption
    *  - HMAC message validation
-   *
-   *  The class behaves as follows:
-   *    An instance of Crypto is created which can encapsulate the secrets for
-   *    each type of encryption. The object is disposable, meaning that you
-   *    could easily have various instances managing encrypted communications
-   *    with various keys/secrets.
-   *
-   *    this of course may not entirely be necessary as we are simply going to
-   *    leverage the java.security API
    */
 
   // User may pass from enum to setup for type of encryption/decryption desired
@@ -42,8 +33,7 @@ class Crypto {
   /**
    * Configure the Crypto instance to perform the specified type of Encryption 
    */
-  public void setCrypto(CIPHER_ALGORITHM cipherAlgorithm,
-      String privateKey) throws NoSuchAlgorithmException {
+  public void setCrypto(CIPHER_ALGORITHM cipherAlgorithm) throws NoSuchAlgorithmException {
     // Do setup based on the algorithm specified
     switch (cipherAlgorithm) {
       case DES:
@@ -65,21 +55,8 @@ class Crypto {
 
   }
 
-  public String getPrivatekey() {
-    return null;
-  }
-
-  /* still need to determine the data types to use.
-   * Likey byte arrays for everyting since it's easy to work with and can be
-   * encoded as a string if desired.
-  public <type> encrypt(<data>) {
+  public void generatePrivKey_DES() {
 
   }
-
-  public <type> decrypt(<data>) {
-
-  }
-  */
-
 }
 

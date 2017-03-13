@@ -4,19 +4,21 @@ import java.security.*;
 import javax.crypto.*;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.spec.IvParameterSpec;
 import java.nio.charset.*;
 import java.util.Base64;
 
 public class CryptoTest {
   @Test
   public void encryptsMessage_DES() throws NoSuchAlgorithmException, InvalidKeyException, 
-         IllegalBlockSizeException, BadPaddingException {
+         IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException {
     // instance of crypto helper
     Crypto DES = new Crypto();
     // set up the DES cypher
     DES.setCrypto(Crypto.CIPHER_ALGORITHM.DES);
     String clearText = "Network Security";
-    String correctMsg_b64 = "U0yZMyTQ+9bGRqifSxpkPg==";
+    String correctMsg_b64 = "ZOF84xPpY65rfuZ3+Edicw==";
+    IvParameterSpec testIV = new IvParameterSpec("dGVzdGl2".getBytes());
     byte[] clearBytes = clearText.getBytes();
     byte[] cipherBytes;
     String cipherText;
@@ -29,7 +31,7 @@ public class CryptoTest {
     SecretKey testKey_inst = new SecretKeySpec(testKey_raw, 0, testKey_raw.length, "DES");
 
     // init the cipher to encrypt  
-    DES.getCipher().init(DES.getCipher().ENCRYPT_MODE, testKey_inst);
+    DES.getCipher().init(DES.getCipher().ENCRYPT_MODE, testKey_inst, testIV);
     // === PERFORM DES ENCRYPTION ON MESSAGE ===
     cipherBytes = DES.getCipher().doFinal(clearBytes);
     byte[] cipherBytes_b64 = Base64.getEncoder().encode(cipherBytes);

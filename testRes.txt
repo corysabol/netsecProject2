@@ -47,3 +47,9 @@ java.security.InvalidKeyException: Wrong key size
 FAILURES!!!
 Tests run: 1,  Failures: 1
 
+JUnit version 4.12
+.
+Time: 0.066
+
+OK (1 test)
+

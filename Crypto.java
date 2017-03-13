@@ -2,12 +2,6 @@ import java.security.*;
 import javax.crypto.*;
 import javax.crypto.Cipher;
 
-/*
- * Crypto class shell
- * Eventually will house the crypto algorithms and helpers to perfom all the
- * crypto needs for the Client and Server applicaitons.
- */
-
 class Crypto {
   /*
    * Provides:
@@ -31,7 +25,10 @@ class Crypto {
   private KeyGenerator keyGen;
 
   /**
+   * @author Cory Sabol - cssabol@uncg.edu
+   * 
    * Configure the Crypto instance to perform the specified type of Encryption 
+   * CIPHER_ALGORITHM cipherAlgorithm - the algorithm to be used
    */
   public void setCrypto(CIPHER_ALGORITHM cipherAlgorithm) throws NoSuchAlgorithmException {
     // Do setup based on the algorithm specified
@@ -52,11 +49,20 @@ class Crypto {
     } catch (NoSuchPaddingException e) {
       System.err.println("invalid padding");
     }
-
   }
 
-  public void generatePrivKey_DES() {
+  /**
+   * Return the Cipher object instance
+   */
+  public Cipher getCipher() {
+    return cipher;
+  }
 
+  /**
+   * Return the KeyGenerator object instance
+   */
+  public KeyGenerator getKeyGen() {
+    return keyGen;
   }
 }
 

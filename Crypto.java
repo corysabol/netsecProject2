@@ -21,6 +21,7 @@ class Crypto {
   };
 
   private String cipherAlgorithm;
+  private String keyGenAlgorithm;
   private Cipher cipher;
   private KeyGenerator keyGen;
 
@@ -34,17 +35,20 @@ class Crypto {
     // Do setup based on the algorithm specified
     switch (cipherAlgorithm) {
       case DES:
-        this.cipherAlgorithm = "DES";
+        this.cipherAlgorithm = "DES/CBC/NoPadding";
+        keyGenAlgorithm = "DES";
         break;
       case RSA:
         this.cipherAlgorithm = "RSA";
+        keyGenAlgorithm = "RSA";
         break;
       default:
-        this.cipherAlgorithm = "DES";
+        this.cipherAlgorithm = "DES/CBC/NoPadding";
+        keyGenAlgorithm = "DES";
     }
 
     try {
-      keyGen = KeyGenerator.getInstance(this.cipherAlgorithm);
+      keyGen = KeyGenerator.getInstance(keyGenAlgorithm);
       cipher = Cipher.getInstance(this.cipherAlgorithm);
     } catch (NoSuchPaddingException e) {
       System.err.println("invalid padding");

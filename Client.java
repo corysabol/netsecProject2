@@ -2,6 +2,7 @@ import java.io.*;
 import java.net.*;
 import javax.crypto.*;
 import java.nio.charset.*;
+import java.util.Base64;
  
 class TCPClient {
   public static void main(String argv[]) throws Exception {
@@ -21,9 +22,11 @@ class TCPClient {
     // === SETUP SHARED KEY, DIFFIE-HELMAN NOT YET IMPLEMENTED ===
     // Just serialize the key and send it off so that the server
     // can unserizalize it and use it easily with the crypto lib?
+
+    // need to init the keygen to use 56 bit key first
+    DES.getKeyGen().init(56);
     SecretKey sharedSecretKey = DES.getKeyGen().generateKey();
     byte[] keyEncoded = sharedSecretKey.getEncoded();
-    System.out.println(new String(keyEncoded));  
     // init the cipher to encrypt  
     DES.getCipher().init(DES.getCipher().ENCRYPT_MODE, sharedSecretKey);
 

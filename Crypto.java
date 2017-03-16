@@ -96,12 +96,10 @@ class Crypto {
   public byte[] encrypt(byte[] data) {
     byte[] cipherText = null;
 
-    // init the keygen
-    if (keyGenAlgorithm == "DES") {
-      keyGen.init(56); 
+    // generate a key only if one hasn't already been set
+    if (secretKey == null) {
+      secretKey = keyGen.generateKey();
     }
-    // generate a key
-    secretKey = keyGen.generateKey();
     // InvalidKeyException
     try {
       cipher.init(cipher.ENCRYPT_MODE, secretKey);

@@ -24,6 +24,7 @@ class Crypto {
   private String keyGenAlgorithm;
   private Cipher cipher;
   private KeyGenerator keyGen;
+  private SecretKey secretKey;
 
   /**
    * @author Cory Sabol - cssabol@uncg.edu
@@ -53,6 +54,71 @@ class Crypto {
     } catch (NoSuchPaddingException e) {
       System.err.println("invalid padding");
     }
+  }
+
+  /**
+   */
+  public SecretKey generateSecretKey() {
+    switch (keyGenAlgorithm) {
+      case "DES":
+        keyGen.init(56);
+        break;
+      case "RSA":
+        break;        
+    }
+    return keyGen.generateKey();
+  }
+
+  /**
+   */
+  public void setSecretKey(String key) {
+
+  }
+
+  /**
+   */
+  public void setSecretKey(byte[] key) {
+
+  }
+
+  /**
+   */
+  public void setSecretKey(SecretKey key) {
+    secretKey = key;
+  }
+
+  /**
+   * @param byte[] data - The byte array containing the data to be transformed
+   *
+   * Encrypts the given data using the cipher that this Crypto instance was
+   * initialized with.
+   */
+  public byte[] encrypt(byte[] data) {
+    byte[] cipherText = null;
+
+    // init the keygen
+    if (keyGenAlgorithm == "DES") {
+      keyGen.init(56); 
+    }
+    // generate a key
+    secretKey = keyGen.generateKey();
+    // InvalidKeyException
+    try {
+      cipher.init(cipher.ENCRYPT_MODE, secretKey);
+    } catch (InvalidKeyException e) {
+      System.err.println("Error: InvalidKey");
+    }
+    
+    // IllegalBlockSizeException
+    try {
+      cipherText = cipher.doFinal(data);
+    } catch (IllegalBlockSizeException e) {
+      System.err.println("Error: IllegalBlockSize");
+    } catch (BadPaddingException e) {
+      System.err.println("Error: BadPadding");
+    }
+
+    return cipherText;
   }
 
   /**

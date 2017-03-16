@@ -39,7 +39,7 @@ public class CryptoTest {
     DES.setSecretKey(testKey_inst);
 
     // === PERFORM DES ENCRYPTION ON MESSAGE ===
-    cipherBytes = DES.encrypt(clearBytes);
+    cipherBytes = DES.encrypt(clearBytes, testIV);
     byte[] cipherBytes_b64 = Base64.getEncoder().encode(cipherBytes);
     cipherText = new String(cipherBytes);
 

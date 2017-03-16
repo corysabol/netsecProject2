@@ -24,7 +24,7 @@ class TCPClient {
     // can unserizalize it and use it easily with the crypto lib?
 
     // need to init the keygen to use 56 bit key first
-    DES.getKeyGen().init(56);
+    /*DES.getKeyGen().init(56);
     SecretKey sharedSecretKey = DES.getKeyGen().generateKey();
     byte[] keyEncoded = sharedSecretKey.getEncoded();
     // init the cipher to encrypt  
@@ -33,6 +33,9 @@ class TCPClient {
     // === PERFORM DES ENCRYPTION ON MESSAGE ===
     cipherBytes = DES.getCipher().doFinal(clearBytes);
     cipherText = new String(cipherBytes, StandardCharsets.UTF_8); // Encode the message with UTF-8
+    */
+
+    cipherBytes = DES.encrypt(clearBytes);
 
     /*
     Socket serverConnSock = new Socket("localhost", 6789);

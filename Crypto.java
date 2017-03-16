@@ -1,5 +1,6 @@
 import java.security.*;
 import javax.crypto.*;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.Cipher;
 
 class Crypto {
@@ -105,6 +106,42 @@ class Crypto {
       cipher.init(cipher.ENCRYPT_MODE, secretKey);
     } catch (InvalidKeyException e) {
       System.err.println("Error: InvalidKey");
+    }
+    
+    // IllegalBlockSizeException
+    try {
+      cipherText = cipher.doFinal(data);
+    } catch (IllegalBlockSizeException e) {
+      System.err.println("Error: IllegalBlockSize");
+    } catch (BadPaddingException e) {
+      System.err.println("Error: BadPadding");
+    }
+
+    return cipherText;
+  }
+
+  /**
+   * @param byte[] data - The byte array containing the data to be transformed
+   * @param IvParameterSpec IV - the initialization vector to be used during
+   *                             data transformation
+   *
+   * Encrypts the given data using the cipher that this Crypto instance was
+   * initialized with.
+   */
+  public byte[] encrypt(byte[] data, IvParameterSpec IV) {
+    byte[] cipherText = null;
+
+    // generate a key only if one hasn't already been set
+    if (secretKey == null) {
+      secretKey = keyGen.generateKey();
+    }
+    // InvalidKeyException
+    try {
+      cipher.init(cipher.ENCRYPT_MODE, secretKey, IV);
+    } catch (InvalidKeyException e) {
+      System.err.println("Error: InvalidKey");
+    } catch (InvalidAlgorithmParameterException e) {
+      System.err.println("Error: InvalidAlgorithmParameter");
     }
     
     // IllegalBlockSizeException

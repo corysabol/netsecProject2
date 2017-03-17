@@ -157,6 +157,43 @@ class Crypto {
   }
 
   /**
+   * @param byte[] cipherText - the byte array containing the cipher text to
+   *                            decrypt
+   * @param IvParameterSpec IV - the initialization vector that was used to
+   *                             encrypt the message
+   * 
+   * Decrypts the given data using the cipher and key that this Crypto instance
+   * was initialized with.
+   */
+  public byte[] decrypt(byte[] cipherText, IvParameterSpec IV) {
+    byte[] clearText = null;
+
+    // generate a key only if one hasn't already been set
+    if (secretKey == null) {
+      secretKey = keyGen.generateKey();
+    }
+    // InvalidKeyException
+    try {
+      cipher.init(cipher.DECRYPT_MODE, secretKey, IV);
+    } catch (InvalidKeyException e) {
+      System.err.println("Error: InvalidKey");
+    } catch (InvalidAlgorithmParameterException e) {
+      System.err.println("Error: InvalidAlgorithmParameter");
+    }
+    
+    // IllegalBlockSizeException
+    try {
+      clearText = cipher.doFinal(cipherText);
+    } catch (IllegalBlockSizeException e) {
+      System.err.println("Error: IllegalBlockSize");
+    } catch (BadPaddingException e) {
+      System.err.println("Error: BadPadding");
+    }
+
+    return clearText;
+  }
+
+  /**
    * Return the Cipher object instance
    */
   public Cipher getCipher() {

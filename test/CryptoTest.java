@@ -47,7 +47,8 @@ public class CryptoTest {
   }
 
   @Test
-  public void decryptsMessage_DES() {
+  public void decryptsMessage_DES() throws NoSuchAlgorithmException, InvalidKeyException, 
+         IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException {
     // instance of crypto helper
     Crypto DES = new Crypto();
     // set up the DES cypher
@@ -59,9 +60,8 @@ public class CryptoTest {
 
     // === TEST IV ===
     IvParameterSpec testIV = new IvParameterSpec("dGVzdGl2".getBytes());
-    byte[] clearBytes = clearText.getBytes();
-    byte[] cipherBytes;
-    String cipherText;
+    byte[] encryptedMsg = Base64.getDecoder().decode(encryptedMsg_b64.getBytes());
+    byte[] decryptedMsg;
 
     // === TEST KEY ===
     String testKey_b64 = "4PJ5ige6GrM=";
@@ -75,9 +75,7 @@ public class CryptoTest {
     DES.setSecretKey(testKey_inst);
 
     // === PERFORM DES ENCRYPTION ON MESSAGE ===
-    cipherBytes = DES.encrypt(clearBytes, testIV);
-    byte[] cipherBytes_b64 = Base64.getEncoder().encode(cipherBytes);
-    cipherText = new String(cipherBytes);
+    decryptedMsg = DES.decrypt(encryptedMsg, testIV);
 
     assertEquals(correctMsg, new String(decryptedMsg));   
   }

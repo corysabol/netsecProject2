@@ -9,7 +9,7 @@ Repo for all source and docs related to netsec project2
 - Write tests
 
 ### run junit test from command line
-`java -cp .:/usr/share/java/junit.jar org.junit.runner.JUnitCore [test class name]`
+run `sh test.sh` from the root directory of the project
 
 # THE DREAM TEAM
 - Cory Sabol

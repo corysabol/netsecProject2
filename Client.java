@@ -108,6 +108,7 @@ class TCPClient {
     // Base 64 encode the cipher text
     byte[] b64_cipherText = Base64.getEncoder().encode(cipherBytes);
     toServer.writeBytes(new String(b64_cipherText)); 
+    toServer.flush();
     serverConnSock.close(); 
   }
 }

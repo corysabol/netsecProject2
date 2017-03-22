@@ -14,10 +14,8 @@ class TCPServer {
     SecretKey DH_DESSecret = null;
     String dhParams = "";
  
-    Socket connectionSocket = welcomeSocket.accept();
-
     while(true) { // wait for a connection
-      //Socket connectionSocket = welcomeSocket.accept();
+      Socket connectionSocket = welcomeSocket.accept();
       BufferedReader inFromClient =
         new BufferedReader(new InputStreamReader(connectionSocket.getInputStream()));
       DataOutputStream outToClient = new DataOutputStream(connectionSocket.getOutputStream());

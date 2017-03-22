@@ -14,8 +14,6 @@ public class CryptoTest {
          IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException {
     // instance of crypto helper
     Crypto DES = new Crypto();
-    // set up the DES cypher
-    DES.setCrypto(Crypto.CIPHER_ALGORITHM.DES);
     
     // === TEST DATA ===
     String clearText = "Network Security";
@@ -24,8 +22,8 @@ public class CryptoTest {
     // === TEST IV ===
     IvParameterSpec testIV = new IvParameterSpec("dGVzdGl2".getBytes());
     byte[] clearBytes = clearText.getBytes();
-    byte[] cipherBytes;
-    String cipherText;
+    byte[] cipherBytes = null;
+    String cipherText = null;
 
     // === TEST KEY ===
     String testKey_b64 = "4PJ5ige6GrM=";
@@ -35,11 +33,12 @@ public class CryptoTest {
     // === Build a SecretKey instance ===
     SecretKey testKey_inst = new SecretKeySpec(testKey_raw, 0, testKey_raw.length, "DES");
     
-    // === Set the key ===
-    DES.setSecretKey(testKey_inst);
-
     // === PERFORM DES ENCRYPTION ON MESSAGE ===
-    cipherBytes = DES.encrypt(clearBytes, testIV);
+    try {
+      cipherBytes = DES.DES_encrypt(clearBytes, testIV, testKey_inst);
+    } catch (Exception e) {
+
+    }
     byte[] cipherBytes_b64 = Base64.getEncoder().encode(cipherBytes);
     cipherText = new String(cipherBytes);
 
@@ -51,8 +50,6 @@ public class CryptoTest {
          IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException {
     // instance of crypto helper
     Crypto DES = new Crypto();
-    // set up the DES cypher
-    DES.setCrypto(Crypto.CIPHER_ALGORITHM.DES);
     
     // === TEST DATA ===
     String correctMsg = "Network Security";
@@ -61,7 +58,7 @@ public class CryptoTest {
     // === TEST IV ===
     IvParameterSpec testIV = new IvParameterSpec("dGVzdGl2".getBytes());
     byte[] encryptedMsg = Base64.getDecoder().decode(encryptedMsg_b64.getBytes());
-    byte[] decryptedMsg;
+    byte[] decryptedMsg = null;
 
     // === TEST KEY ===
     String testKey_b64 = "4PJ5ige6GrM=";
@@ -71,11 +68,12 @@ public class CryptoTest {
     // === Build a SecretKey instance ===
     SecretKey testKey_inst = new SecretKeySpec(testKey_raw, 0, testKey_raw.length, "DES");
     
-    // === Set the key ===
-    DES.setSecretKey(testKey_inst);
-
     // === PERFORM DES ENCRYPTION ON MESSAGE ===
-    decryptedMsg = DES.decrypt(encryptedMsg, testIV);
+    try {
+      decryptedMsg = DES.DES_decrypt(encryptedMsg, testIV, testKey_inst);
+    } catch (Exception e) {
+
+    }
 
     assertEquals(correctMsg, new String(decryptedMsg));   
   }

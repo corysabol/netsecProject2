@@ -8,14 +8,15 @@ import javax.crypto.*;
 import java.security.*;
  
 class TCPClient {
+
   public static void main(String argv[]) throws Exception {
 
     // instance of crypto helper
     Crypto encrypter = new Crypto();
     SecretKey DH_DESSecret = null;
 
-    String clearText = "Network Security";
-    byte[] clearBytes = clearText.getBytes();
+    String clearText = "Network Security\n";
+    byte[] clearBytes = clearText.getBytes("UTF-8");
     byte[] cipherBytes;
     String cipherText;
 
@@ -64,7 +65,9 @@ class TCPClient {
       System.out.println("=== GENERATED DH PARAMETERS: ===\n"
                          + dhParams + "\n=========================");
       // === DIFFIE HELLMAN: 2 ===
-      toServer.write(dhParams.getBytes("UTF-8")); 
+      toServer.writeBytes(new String(dhParams.getBytes())); 
+      toServer.writeBytes("\n");
+      toServer.flush();
       // === DIFFIE HELLMAN: 3 ===
       // generate this client's keypair
       kp = encrypter.DH_genKeyPair(dhParams);
@@ -81,8 +84,6 @@ class TCPClient {
 
     // Need to wait for server keys to be created
     try {
-      boolean serverPubkCreated = false;
-      // will relative path work?
       Path path = Paths.get(basePath + "/keys/server/dh_public");
       System.out.println("Waiting for server DH public key to become available");
       while (!path.toFile().exists()) {} // wait for file to be available
@@ -99,9 +100,14 @@ class TCPClient {
                        + new String(DH_DESSecret.getEncoded()));
 
     // === MESSAGING PHASE ===
-    
-    //toServer.writeBytes(cipherText);
-    //serverConnSock.close();
-
+    // Encrypt the clear text
+    cipherBytes = encrypter.DES_encrypt(clearBytes, DH_DESSecret);
+    System.out.println("CIPHER TEXT LEN: " + cipherBytes.length);
+    System.out.println("=== MESSAGE ENCRYPTED ===\nSENDING CIPHER TEXT\n"
+                       + new String());
+    // Base 64 encode the cipher text
+    byte[] b64_cipherText = Base64.getEncoder().encode(cipherBytes);
+    toServer.writeBytes(new String(b64_cipherText)); 
+    serverConnSock.close(); 
   }
 }

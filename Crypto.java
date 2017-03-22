@@ -1,7 +1,17 @@
+import java.net.*;
+import java.io.*;
+
 import java.security.*;
+import java.security.spec.*;
+import java.security.spec.X509EncodedKeySpec;
+import java.security.spec.InvalidParameterSpecException;
+import java.security.AlgorithmParameterGenerator;
 import javax.crypto.*;
+import javax.crypto.spec.*;
+import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.Cipher;
+import java.math.BigInteger;
 
 class Crypto {
   /*
@@ -24,7 +34,8 @@ class Crypto {
   private String cipherAlgorithm;
   private String keyGenAlgorithm;
   private Cipher cipher;
-  private KeyGenerator keyGen;
+  private KeyGenerator keyGen; // For generating a symmetric key
+  private KeyPairGenerator keyPairGen; // For generating an asymmetric key pair
   private SecretKey secretKey;
 
   /**
@@ -41,7 +52,7 @@ class Crypto {
         keyGenAlgorithm = "DES";
         break;
       case RSA:
-        this.cipherAlgorithm = "RSA";
+        this.cipherAlgorithm = "RSA/ECB/PKCS1Padding";
         keyGenAlgorithm = "RSA";
         break;
       default:
@@ -58,32 +69,114 @@ class Crypto {
   }
 
   /**
+   * Will have to modify this...
    */
   public SecretKey generateSecretKey() {
     switch (keyGenAlgorithm) {
       case "DES":
         keyGen.init(56);
         break;
-      case "RSA":
-        break;        
     }
     return keyGen.generateKey();
   }
 
+
   /**
+   * Generate a string containing Diffie Helman parameter;
+   * g, p, and l
+   * where g and p are primes and l is a secret value.
+   * g and p will be sent to the other party involved in secret creation
    */
-  public void setSecretKey(String key) {
+  public String generateDHParams() {
+    String paramString = "";
+    try {
+      AlgorithmParameterGenerator dhParamGen = AlgorithmParameterGenerator.getInstance("DH");
+      dhParamGen.init(1024);
+      AlgorithmParameters params = dhParamGen.generateParameters(); 
+      DHParameterSpec dhSpec = params.getParameterSpec(DHParameterSpec.class);
+
+      paramString = dhSpec.getP()+","+dhSpec.getG()+","+dhSpec.getL();
+    } catch (NoSuchAlgorithmException e) {
+      System.err.println("Error NoSuchAlgorithmException");
+    } catch (InvalidParameterSpecException e) {
+      System.err.println("Error InvalidParameterSpecException");
+    }
+
+    return paramString;
+  }
+
+  public KeyPair DH_genKeyPair(String DHParamStr) 
+    throws InvalidKeyException, NoSuchAlgorithmException, 
+           InvalidAlgorithmParameterException {
+
+    String[] values = DHParamStr.split(",");
+    BigInteger p = new BigInteger(values[0]);
+    BigInteger g = new BigInteger(values[1]);
+    int l = Integer.parseInt(values[2]);
+
+    KeyPair keypair = null;
+
+    KeyPairGenerator keyGen = KeyPairGenerator.getInstance("DH");
+    DHParameterSpec dhSpec = new DHParameterSpec(p, g, l);
+    keyGen.initialize(dhSpec);
+    keypair = keyGen.generateKeyPair();
+
+    /*// Get generated key pair
+    PrivateKey privateKey = keypair.getPrivate();
+    PublicKey publicKey = keypair.getPublic();
+    */
+
+    return keypair;
 
   }
 
   /**
+   * write the keys to files
    */
-  public void setSecretKey(byte[] key) {
+  public void DH_keyPairToFiles(KeyPair kp, String dirPath) 
+    throws FileNotFoundException, IOException {
+
+    PrivateKey privk = kp.getPrivate();
+    PublicKey pubk = kp.getPublic();
+    byte[] privkBytes = privk.getEncoded();
+    byte[] pubkBytes = pubk.getEncoded();
+    File privkFile = new File(dirPath + "/dh_private");
+    File pubkFile = new File(dirPath + "/dh_public");
+    FileOutputStream privOut = null;
+    FileOutputStream pubOut = null;
+      
+    privOut = new FileOutputStream(privkFile);
+    pubOut = new FileOutputStream(pubkFile);
+    // Write the keys to a file for retreival by the other party
+    privOut.write(privkBytes);
+    pubOut.write(pubkBytes);
 
   }
 
   /**
+   * Perform diffie helman key exchange protocol with second party
+   * Assumes that the shared data has already been exchanged in some manner
    */
+  public SecretKey DH_genDESSecret(PrivateKey privKey, byte[] otherPubKeyBytes) 
+    throws InvalidKeySpecException, InvalidKeyException, NoSuchAlgorithmException {
+
+    SecretKey secretKey = null;
+
+    PublicKey otherPublicKey = null;
+    X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(otherPubKeyBytes);
+    KeyFactory keyFact = KeyFactory.getInstance("DH");
+    otherPublicKey = keyFact.generatePublic(x509KeySpec);
+
+    // generate secret key with private key and other public key
+    KeyAgreement ka = KeyAgreement.getInstance("DH");
+    ka.init(privKey);
+    ka.doPhase(otherPublicKey, true);
+
+    secretKey = ka.generateSecret("DES");
+
+    return secretKey;
+  }
+
   public void setSecretKey(SecretKey key) {
     secretKey = key;
   }
@@ -97,10 +190,6 @@ class Crypto {
   public byte[] encrypt(byte[] data) {
     byte[] cipherText = null;
 
-    // generate a key only if one hasn't already been set
-    if (secretKey == null) {
-      secretKey = keyGen.generateKey();
-    }
     // InvalidKeyException
     try {
       cipher.init(cipher.ENCRYPT_MODE, secretKey);

@@ -1,21 +1,66 @@
 import java.io.*;
+import java.nio.file.*;
 import java.net.*;
- 
+import javax.crypto.*;
+import java.nio.charset.*;
+import java.util.Base64;
+import javax.crypto.*;
+import java.security.*;
+
 class TCPServer {
   public static void main(String argv[]) throws Exception {
-    String clientSentence;
-    String capitalizedSentence;
+    Crypto encrypter = new Crypto();
     ServerSocket welcomeSocket = new ServerSocket(6789);
+    SecretKey DH_DESSecret = null;
+    String dhParams = "";
  
-    while(true) {
+    while(true) { // wait for a connection
       Socket connectionSocket = welcomeSocket.accept();
       BufferedReader inFromClient =
         new BufferedReader(new InputStreamReader(connectionSocket.getInputStream()));
       DataOutputStream outToClient = new DataOutputStream(connectionSocket.getOutputStream());
-      clientSentence = inFromClient.readLine();
-      System.out.println("Received: " + clientSentence);
-      capitalizedSentence = clientSentence.toUpperCase() + '\n';
-      outToClient.writeBytes(capitalizedSentence);
+      
+      KeyPair kp = null;
+      String basePath = new File("").getAbsolutePath();
+
+      // Check if the key files exist already
+      File t1 = new File(basePath + "/keys/server/dh_public");
+      File t2 = new File(basePath + "/keys/server/dh_private");
+      if (t1.exists() && t2.exists()) {
+        System.out.println("=== KEY FILES ALREADY EXIST, OVERWRITTING ===");
+        t1.delete();
+        t2.delete();
+      } else {
+        System.out.println("=== KEY FILES WILL BE CREATED ===");
+      }
+
+      // === PERFORM DIFFIE HELLMAN ONCE WE GET PARAMS FROM CLIENT ===
+      // params should be the first thing that we get from the client
+      dhParams = inFromClient.readLine();
+      System.out.println("RECEIVED DH PARAMS: " + dhParams);
+
+      // === DIFFIE HELLMAN: 3 ===
+      // generate this client's keypair
+      kp = encrypter.DH_genKeyPair(dhParams);
+      // Write the key pair files
+      basePath = new File("").getAbsolutePath();
+      System.out.println(basePath);
+
+      encrypter.DH_keyPairToFiles(kp, basePath + "/keys/server/");
+      // === DIFFIE HELLMAN: 4 ===
+      byte[] otherPubkBytes = null;
+      try {
+        // will relative path work?
+        Path path = Paths.get(basePath + "/keys/client/dh_public");
+        otherPubkBytes = Files.readAllBytes(path.toAbsolutePath());
+
+        // === DIFFIE HELLMAN: 5 ===
+        DH_DESSecret = encrypter.DH_genDESSecret(kp.getPrivate(), otherPubkBytes);
+      } catch (FileNotFoundException e) {}
+
+      System.out.println("DES KEY LEN: " + new String(DH_DESSecret.getEncoded()).length() + "\nKEY: "
+                         + new String(DH_DESSecret.getEncoded()));
+
     }
   }
 }

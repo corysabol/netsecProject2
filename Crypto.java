@@ -31,12 +31,10 @@ class Crypto {
     RSA 
   };
 
-  private String cipherAlgorithm;
-  private String keyGenAlgorithm;
-  private Cipher cipher;
-  private KeyGenerator keyGen; // For generating a symmetric key
-  private KeyPairGenerator keyPairGen; // For generating an asymmetric key pair
-  private SecretKey secretKey;
+  private final String DES_ALGORITHM = "DES/CBC/NoPadding";
+  private final String DES_KEY_ALGORITHM = "DES";
+  private final String RSA_ALGORITHM = "RSA/ECB/PKCS1Padding";
+  private final String RSA_KEY_ALGORITHM = "RSA";
 
   /**
    * @author Cory Sabol - cssabol@uncg.edu
@@ -44,7 +42,7 @@ class Crypto {
    * Configure the Crypto instance to perform the specified type of Encryption 
    * CIPHER_ALGORITHM cipherAlgorithm - the algorithm to be used
    */
-  public void setCrypto(CIPHER_ALGORITHM cipherAlgorithm) throws NoSuchAlgorithmException {
+  /*public void setCrypto(CIPHER_ALGORITHM cipherAlgorithm) throws NoSuchAlgorithmException {
     // Do setup based on the algorithm specified
     switch (cipherAlgorithm) {
       case DES:
@@ -66,20 +64,7 @@ class Crypto {
     } catch (NoSuchPaddingException e) {
       System.err.println("invalid padding");
     }
-  }
-
-  /**
-   * Will have to modify this...
-   */
-  public SecretKey generateSecretKey() {
-    switch (keyGenAlgorithm) {
-      case "DES":
-        keyGen.init(56);
-        break;
-    }
-    return keyGen.generateKey();
-  }
-
+  }*/
 
   /**
    * Generate a string containing Diffie Helman parameter;
@@ -140,16 +125,20 @@ class Crypto {
     PublicKey pubk = kp.getPublic();
     byte[] privkBytes = privk.getEncoded();
     byte[] pubkBytes = pubk.getEncoded();
-    File privkFile = new File(dirPath + "/dh_private");
-    File pubkFile = new File(dirPath + "/dh_public");
+    File privkFile = new File(dirPath + "dh_private");
+    File pubkFile = new File(dirPath + "dh_public");
     FileOutputStream privOut = null;
     FileOutputStream pubOut = null;
       
-    privOut = new FileOutputStream(privkFile);
-    pubOut = new FileOutputStream(pubkFile);
+    privOut = new FileOutputStream(privkFile, false);
+    pubOut = new FileOutputStream(pubkFile, false);
     // Write the keys to a file for retreival by the other party
     privOut.write(privkBytes);
     pubOut.write(pubkBytes);
+
+    // close things up
+    privOut.close();
+    pubOut.close();
 
   }
 
@@ -161,24 +150,21 @@ class Crypto {
     throws InvalidKeySpecException, InvalidKeyException, NoSuchAlgorithmException {
 
     SecretKey secretKey = null;
-
     PublicKey otherPublicKey = null;
+
     X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(otherPubKeyBytes);
     KeyFactory keyFact = KeyFactory.getInstance("DH");
     otherPublicKey = keyFact.generatePublic(x509KeySpec);
 
     // generate secret key with private key and other public key
     KeyAgreement ka = KeyAgreement.getInstance("DH");
-    ka.init(privKey);
+    ka.init(privKey); // make sure we generate 56 bit des key
     ka.doPhase(otherPublicKey, true);
 
     secretKey = ka.generateSecret("DES");
+    //secretKey = ka.generateSecret(this.DES_ALGORITHM); // Need to make sure this generates a 56 bit key
 
     return secretKey;
-  }
-
-  public void setSecretKey(SecretKey key) {
-    secretKey = key;
   }
 
   /**
@@ -187,26 +173,26 @@ class Crypto {
    * Encrypts the given data using the cipher that this Crypto instance was
    * initialized with.
    */
-  public byte[] encrypt(byte[] data) {
+  public byte[] DES_encrypt(byte[] data, SecretKey secretKey) throws Exception {
+
+    Cipher c = Cipher.getInstance(this.DES_ALGORITHM);
     byte[] cipherText = null;
 
-    // InvalidKeyException
-    try {
-      cipher.init(cipher.ENCRYPT_MODE, secretKey);
-    } catch (InvalidKeyException e) {
-      System.err.println("Error: InvalidKey");
-    }
-    
-    // IllegalBlockSizeException
-    try {
-      cipherText = cipher.doFinal(data);
-    } catch (IllegalBlockSizeException e) {
-      System.err.println("Error: IllegalBlockSize");
-    } catch (BadPaddingException e) {
-      System.err.println("Error: BadPadding");
-    }
-
+    c.init(Cipher.ENCRYPT_MODE, secretKey);
+    cipherText = c.doFinal(data);
     return cipherText;
+  }
+
+  /**
+   *
+   */
+  public byte[] DES_decrypt(byte[] data, SecretKey secretKey) throws Exception {
+    Cipher c = Cipher.getInstance(this.DES_ALGORITHM);
+    byte[] clearText = null;
+
+    c.init(Cipher.DECRYPT_MODE, secretKey);
+    clearText = c.doFinal(data);
+    return clearText;
   }
 
   /**
@@ -217,30 +203,12 @@ class Crypto {
    * Encrypts the given data using the cipher that this Crypto instance was
    * initialized with.
    */
-  public byte[] encrypt(byte[] data, IvParameterSpec IV) {
+  public byte[] DES_encrypt(byte[] data, IvParameterSpec IV, SecretKey secretKey) throws Exception {
+    Cipher c = Cipher.getInstance(this.DES_ALGORITHM);
     byte[] cipherText = null;
 
-    // generate a key only if one hasn't already been set
-    if (secretKey == null) {
-      secretKey = keyGen.generateKey();
-    }
-    // InvalidKeyException
-    try {
-      cipher.init(cipher.ENCRYPT_MODE, secretKey, IV);
-    } catch (InvalidKeyException e) {
-      System.err.println("Error: InvalidKey");
-    } catch (InvalidAlgorithmParameterException e) {
-      System.err.println("Error: InvalidAlgorithmParameter");
-    }
-    
-    // IllegalBlockSizeException
-    try {
-      cipherText = cipher.doFinal(data);
-    } catch (IllegalBlockSizeException e) {
-      System.err.println("Error: IllegalBlockSize");
-    } catch (BadPaddingException e) {
-      System.err.println("Error: BadPadding");
-    }
+    c.init(Cipher.ENCRYPT_MODE, secretKey, IV);
+    cipherText = c.doFinal(data);
 
     return cipherText;
   }
@@ -254,46 +222,14 @@ class Crypto {
    * Decrypts the given data using the cipher and key that this Crypto instance
    * was initialized with.
    */
-  public byte[] decrypt(byte[] cipherText, IvParameterSpec IV) {
+  public byte[] DES_decrypt(byte[] cipherText, IvParameterSpec IV, SecretKey secretKey) throws Exception {
+    Cipher c = Cipher.getInstance(this.DES_ALGORITHM);
     byte[] clearText = null;
 
-    // generate a key only if one hasn't already been set
-    if (secretKey == null) {
-      secretKey = keyGen.generateKey();
-    }
-    // InvalidKeyException
-    try {
-      cipher.init(cipher.DECRYPT_MODE, secretKey, IV);
-    } catch (InvalidKeyException e) {
-      System.err.println("Error: InvalidKey");
-    } catch (InvalidAlgorithmParameterException e) {
-      System.err.println("Error: InvalidAlgorithmParameter");
-    }
-    
-    // IllegalBlockSizeException
-    try {
-      clearText = cipher.doFinal(cipherText);
-    } catch (IllegalBlockSizeException e) {
-      System.err.println("Error: IllegalBlockSize");
-    } catch (BadPaddingException e) {
-      System.err.println("Error: BadPadding");
-    }
+    c.init(Cipher.DECRYPT_MODE, secretKey, IV);
+    clearText = c.doFinal(cipherText);
 
     return clearText;
-  }
-
-  /**
-   * Return the Cipher object instance
-   */
-  public Cipher getCipher() {
-    return cipher;
-  }
-
-  /**
-   * Return the KeyGenerator object instance
-   */
-  public KeyGenerator getKeyGen() {
-    return keyGen;
   }
 }
 

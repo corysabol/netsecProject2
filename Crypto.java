@@ -31,7 +31,7 @@ class Crypto {
     RSA 
   };
 
-  private final String DES_ALGORITHM = "DES/CBC/NoPadding";
+  private final String DES_ALGORITHM = "DES/ECB/PKCS5Padding";
   private final String DES_KEY_ALGORITHM = "DES";
   private final String RSA_ALGORITHM = "RSA/ECB/PKCS1Padding";
   private final String RSA_KEY_ALGORITHM = "RSA";

@@ -36,7 +36,7 @@ class TCPServer {
 
       // === PERFORM DIFFIE HELLMAN ONCE WE GET PARAMS FROM CLIENT ===
       // params should be the first thing that we get from the client
-      dhParams = inFromClient.readLine();
+      dhParams = inFromClient.readLine().trim();
       System.out.println("RECEIVED DH PARAMS: " + dhParams);
 
       // === DIFFIE HELLMAN: 3 ===
@@ -60,6 +60,18 @@ class TCPServer {
 
       System.out.println("DES KEY LEN: " + new String(DH_DESSecret.getEncoded()).length() + "\nKEY: "
                          + new String(DH_DESSecret.getEncoded()));
+
+      
+      // === MESSAGING PHASE ===
+
+      // get the cipher text from the client and decrypt it
+      System.out.println("=== RECEIVING ENCRYPTED MESSAGE ===\nDecrypting"); 
+      String cipherText = inFromClient.readLine();
+      byte[] b64_decodedCipherText = Base64.getDecoder().decode(cipherText.getBytes());
+      byte[] clearText = encrypter.DES_decrypt(b64_decodedCipherText, DH_DESSecret);
+      System.out.println("CIPHER TEXT BYTES B64 LEN: " + b64_decodedCipherText.length);
+      System.out.println("B64 CIPHER TEXT: " + cipherText);
+      System.out.println("=== DECRYPTED MESSAGE ===\n" + new String(clearText));
 
     }
   }

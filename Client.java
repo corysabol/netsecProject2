@@ -91,7 +91,8 @@ class TCPClient {
       System.out.println("File ready... Reading.");
       otherPubkBytes = Files.readAllBytes(path.toAbsolutePath());
 
-      System.out.println("SERVER PUBKEY: " + new String(otherPubkBytes));
+      System.out.println("SERVER PUBKEY b64: " 
+          + Base64.getEncoder().encode(otherPubkBytes));
 
       // === DIFFIE HELLMAN: 5 ===
       DH_DESSecret = CryptoUtil.DH_genDESSecret(kp.getPrivate(), otherPubkBytes);

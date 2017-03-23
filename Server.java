@@ -9,7 +9,6 @@ import java.security.*;
 
 class TCPServer {
   public static void main(String argv[]) throws Exception {
-    Crypto encrypter = new Crypto();
     ServerSocket welcomeSocket = new ServerSocket(6789);
     SecretKey DH_DESSecret = null;
     String dhParams = "";
@@ -41,12 +40,12 @@ class TCPServer {
 
       // === DIFFIE HELLMAN: 3 ===
       // generate this client's keypair
-      kp = encrypter.DH_genKeyPair(dhParams);
+      kp = CryptoUtil.DH_genKeyPair(dhParams);
       // Write the key pair files
       basePath = new File("").getAbsolutePath();
       System.out.println(basePath);
 
-      encrypter.DH_keyPairToFiles(kp, basePath + "/keys/server/");
+      CryptoUtil.DH_keyPairToFiles(kp, basePath + "/keys/server/");
       // === DIFFIE HELLMAN: 4 ===
       byte[] otherPubkBytes = null;
       try {
@@ -55,7 +54,7 @@ class TCPServer {
         otherPubkBytes = Files.readAllBytes(path.toAbsolutePath());
 
         // === DIFFIE HELLMAN: 5 ===
-        DH_DESSecret = encrypter.DH_genDESSecret(kp.getPrivate(), otherPubkBytes);
+        DH_DESSecret = CryptoUtil.DH_genDESSecret(kp.getPrivate(), otherPubkBytes);
       } catch (FileNotFoundException e) {}
 
       System.out.println("DES KEY LEN: " + new String(DH_DESSecret.getEncoded()).length() + "\nKEY: "
@@ -68,7 +67,7 @@ class TCPServer {
       System.out.println("=== RECEIVING ENCRYPTED MESSAGE ===\nDecrypting"); 
       String cipherText = inFromClient.readLine();
       byte[] b64_decodedCipherText = Base64.getDecoder().decode(cipherText.getBytes());
-      byte[] clearText = encrypter.DES_decrypt(b64_decodedCipherText, DH_DESSecret);
+      byte[] clearText = CryptoUtil.DES_decrypt(b64_decodedCipherText, DH_DESSecret);
       System.out.println("CIPHER TEXT BYTES B64 LEN: " + b64_decodedCipherText.length);
       System.out.println("B64 CIPHER TEXT: " + cipherText);
       System.out.println("=== DECRYPTED MESSAGE ===\n" + new String(clearText));

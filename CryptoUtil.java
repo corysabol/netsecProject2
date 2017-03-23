@@ -212,7 +212,7 @@ public final class CryptoUtil {
 
   // === RSA ===
   public static KeyPair RSA_genKeyPair() throws Exception {
-    KeyPairGenerator kpGen = KeyPairGenerator.getInstance(CryptoUtil.RSA_ALGORITHM);
+    KeyPairGenerator kpGen = KeyPairGenerator.getInstance(CryptoUtil.RSA_KEY_ALGORITHM);
     kpGen.initialize(1024);
     KeyPair kp = kpGen.generateKeyPair();
     return kp;

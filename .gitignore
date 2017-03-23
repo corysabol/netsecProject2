@@ -1,4 +1,2 @@
 *.class
 *.swp
-keys/client/*
-keys/server/*

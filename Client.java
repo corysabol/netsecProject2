@@ -119,6 +119,9 @@ class TCPClient {
     // 3. Transmit the encrypted secret to the recipient
     // 4. await response encrypted with this client's public key
     // 5. decrypt response stating that message was received
+    
+
+
     serverConnSock.close(); 
   }
 }

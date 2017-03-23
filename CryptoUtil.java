@@ -13,7 +13,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.Cipher;
 import java.math.BigInteger;
 
-class Crypto {
+public final class CryptoUtil {
   /*
    * Provides:
    *  - Helpers for performing Diffie-Helman key exchanges
@@ -25,54 +25,27 @@ class Crypto {
    *  - HMAC message validation
    */
 
-  // User may pass from enum to setup for type of encryption/decryption desired
-  public enum CIPHER_ALGORITHM {
-    DES,
-    RSA 
-  };
-
-  private final String DES_ALGORITHM = "DES/ECB/PKCS5Padding";
-  private final String DES_KEY_ALGORITHM = "DES";
-  private final String RSA_ALGORITHM = "RSA/ECB/PKCS1Padding";
-  private final String RSA_KEY_ALGORITHM = "RSA";
+  public static final String DES_ALGORITHM = "DES/ECB/PKCS5Padding";
+  public static final String DES_KEY_ALGORITHM = "DES";
+  public static final String RSA_ALGORITHM = "RSA/ECB/PKCS1Padding";
+  public static final String RSA_KEY_ALGORITHM = "RSA";
 
   /**
    * @author Cory Sabol - cssabol@uncg.edu
    * 
-   * Configure the Crypto instance to perform the specified type of Encryption 
-   * CIPHER_ALGORITHM cipherAlgorithm - the algorithm to be used
    */
-  /*public void setCrypto(CIPHER_ALGORITHM cipherAlgorithm) throws NoSuchAlgorithmException {
-    // Do setup based on the algorithm specified
-    switch (cipherAlgorithm) {
-      case DES:
-        this.cipherAlgorithm = "DES/CBC/NoPadding";
-        keyGenAlgorithm = "DES";
-        break;
-      case RSA:
-        this.cipherAlgorithm = "RSA/ECB/PKCS1Padding";
-        keyGenAlgorithm = "RSA";
-        break;
-      default:
-        this.cipherAlgorithm = "DES/CBC/NoPadding";
-        keyGenAlgorithm = "DES";
-    }
 
-    try {
-      keyGen = KeyGenerator.getInstance(keyGenAlgorithm);
-      cipher = Cipher.getInstance(this.cipherAlgorithm);
-    } catch (NoSuchPaddingException e) {
-      System.err.println("invalid padding");
-    }
-  }*/
+  // make the constructor private so that it cannot be instantiated
+  private CryptoUtil() {};
 
+  // === DIFFIE HELLMAN ===
   /**
    * Generate a string containing Diffie Helman parameter;
    * g, p, and l
    * where g and p are primes and l is a secret value.
    * g and p will be sent to the other party involved in secret creation
    */
-  public String generateDHParams() {
+  public static String generateDHParams() {
     String paramString = "";
     try {
       AlgorithmParameterGenerator dhParamGen = AlgorithmParameterGenerator.getInstance("DH");
@@ -90,7 +63,7 @@ class Crypto {
     return paramString;
   }
 
-  public KeyPair DH_genKeyPair(String DHParamStr) 
+  public static KeyPair DH_genKeyPair(String DHParamStr) 
     throws InvalidKeyException, NoSuchAlgorithmException, 
            InvalidAlgorithmParameterException {
 
@@ -118,7 +91,7 @@ class Crypto {
   /**
    * write the keys to files
    */
-  public void DH_keyPairToFiles(KeyPair kp, String dirPath) 
+  public static void DH_keyPairToFiles(KeyPair kp, String dirPath) 
     throws FileNotFoundException, IOException {
 
     PrivateKey privk = kp.getPrivate();
@@ -146,7 +119,7 @@ class Crypto {
    * Perform diffie helman key exchange protocol with second party
    * Assumes that the shared data has already been exchanged in some manner
    */
-  public SecretKey DH_genDESSecret(PrivateKey privKey, byte[] otherPubKeyBytes) 
+  public static SecretKey DH_genDESSecret(PrivateKey privKey, byte[] otherPubKeyBytes) 
     throws InvalidKeySpecException, InvalidKeyException, NoSuchAlgorithmException {
 
     SecretKey secretKey = null;
@@ -166,16 +139,19 @@ class Crypto {
 
     return secretKey;
   }
+  // ===========
+
+  // === DES ===
 
   /**
    * @param byte[] data - The byte array containing the data to be transformed
    *
-   * Encrypts the given data using the cipher that this Crypto instance was
+   * Encrypts the given data using the cipher that this CryptoUtil instance was
    * initialized with.
    */
-  public byte[] DES_encrypt(byte[] data, SecretKey secretKey) throws Exception {
+  public static byte[] DES_encrypt(byte[] data, SecretKey secretKey) throws Exception {
 
-    Cipher c = Cipher.getInstance(this.DES_ALGORITHM);
+    Cipher c = Cipher.getInstance(CryptoUtil.DES_ALGORITHM);
     byte[] cipherText = null;
 
     c.init(Cipher.ENCRYPT_MODE, secretKey);
@@ -186,8 +162,8 @@ class Crypto {
   /**
    *
    */
-  public byte[] DES_decrypt(byte[] data, SecretKey secretKey) throws Exception {
-    Cipher c = Cipher.getInstance(this.DES_ALGORITHM);
+  public static byte[] DES_decrypt(byte[] data, SecretKey secretKey) throws Exception {
+    Cipher c = Cipher.getInstance(CryptoUtil.DES_ALGORITHM);
     byte[] clearText = null;
 
     c.init(Cipher.DECRYPT_MODE, secretKey);
@@ -200,11 +176,11 @@ class Crypto {
    * @param IvParameterSpec IV - the initialization vector to be used during
    *                             data transformation
    *
-   * Encrypts the given data using the cipher that this Crypto instance was
+   * Encrypts the given data using the cipher that this CryptoUtil instance was
    * initialized with.
    */
-  public byte[] DES_encrypt(byte[] data, IvParameterSpec IV, SecretKey secretKey) throws Exception {
-    Cipher c = Cipher.getInstance(this.DES_ALGORITHM);
+  public static byte[] DES_encrypt(byte[] data, IvParameterSpec IV, SecretKey secretKey) throws Exception {
+    Cipher c = Cipher.getInstance(CryptoUtil.DES_ALGORITHM);
     byte[] cipherText = null;
 
     c.init(Cipher.ENCRYPT_MODE, secretKey, IV);
@@ -219,11 +195,11 @@ class Crypto {
    * @param IvParameterSpec IV - the initialization vector that was used to
    *                             encrypt the message
    * 
-   * Decrypts the given data using the cipher and key that this Crypto instance
+   * Decrypts the given data using the cipher and key that this CryptoUtil instance
    * was initialized with.
    */
-  public byte[] DES_decrypt(byte[] cipherText, IvParameterSpec IV, SecretKey secretKey) throws Exception {
-    Cipher c = Cipher.getInstance(this.DES_ALGORITHM);
+  public static byte[] DES_decrypt(byte[] cipherText, IvParameterSpec IV, SecretKey secretKey) throws Exception {
+    Cipher c = Cipher.getInstance(CryptoUtil.DES_ALGORITHM);
     byte[] clearText = null;
 
     c.init(Cipher.DECRYPT_MODE, secretKey, IV);
@@ -231,5 +207,69 @@ class Crypto {
 
     return clearText;
   }
+  // ===========
+
+
+  // === RSA ===
+  public static KeyPair RSA_genKeyPair() throws Exception {
+    KeyPairGenerator kpGen = KeyPairGenerator.getInstance(CryptoUtil.RSA_ALGORITHM);
+    kpGen.initialize(1024);
+    KeyPair kp = kpGen.generateKeyPair();
+    return kp;
+  }
+
+  public static void RSA_keysToFiles(KeyPair kp, String outDir) 
+    throws FileNotFoundException, IOException {
+    // write the files to disk
+    PrivateKey privk = kp.getPrivate();
+    PublicKey pubk = kp.getPublic();
+    byte[] privkBytes = privk.getEncoded();
+    byte[] pubkBytes = pubk.getEncoded();
+    
+    File privkFile = new File(outDir + "RSA_private.key");
+    File pubkFile = new File(outDir + "RSA_public.key");
+
+    FileOutputStream privOut = null;
+    FileOutputStream pubOut = null;
+
+    privOut = new FileOutputStream(privkFile, false);
+    pubOut = new FileOutputStream(pubkFile, false);
+    // Write the keys to a file for retreival by the other party
+    privOut.write(privkBytes);
+    pubOut.write(pubkBytes);
+
+    // close things up
+    privOut.close();
+    pubOut.close();
+
+  }
+
+  public static void RSA_signMessage() {
+
+  }
+ 
+  public static byte[] RSA_encrypt(byte[] data, PublicKey pubk) throws Exception {
+    byte[] cipherBytes = null;
+    Cipher c = Cipher.getInstance(CryptoUtil.RSA_ALGORITHM);
+    c.init(Cipher.ENCRYPT_MODE, pubk);
+    cipherBytes = c.doFinal(data);
+
+    return cipherBytes;
+  }
+
+  public static byte[] RSA_decrypt(byte[] data, PrivateKey privk) throws Exception {
+    byte[] clearBytes = null;
+    Cipher c = Cipher.getInstance(CryptoUtil.RSA_ALGORITHM);
+    c.init(Cipher.DECRYPT_MODE, privk);
+    clearBytes = c.doFinal(data);
+
+    return clearBytes;
+  }
+  // ===========
+  
+  // === HMAC ===
+  
+
+  // ============
 }
 

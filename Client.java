@@ -12,8 +12,9 @@ class TCPClient {
   public static void main(String argv[]) throws Exception {
 
     // instance of crypto helper
-    Crypto encrypter = new Crypto();
-    SecretKey DH_DESSecret = null;
+    //Crypto CryptoUtil = new Crypto();
+    SecretKey DH_DESSecret = null; // the secret created via DH
+    SecretKey RSA_DESSecret = null; // The secret created via normal means and shared using RSA asymmetric encryption
 
     String clearText = "Network Security\n";
     byte[] clearBytes = clearText.getBytes("UTF-8");
@@ -60,7 +61,7 @@ class TCPClient {
 
     if (!keysExist) {
       // === DIFFIE HELLMAN: 1 ===
-      dhParams = encrypter.generateDHParams();
+      dhParams = CryptoUtil.generateDHParams();
 
       System.out.println("=== GENERATED DH PARAMETERS: ===\n"
                          + dhParams + "\n=========================");
@@ -70,12 +71,12 @@ class TCPClient {
       toServer.flush();
       // === DIFFIE HELLMAN: 3 ===
       // generate this client's keypair
-      kp = encrypter.DH_genKeyPair(dhParams);
+      kp = CryptoUtil.DH_genKeyPair(dhParams);
       // Write the key pair files
       basePath = new File("").getAbsolutePath();
       System.out.println(basePath);
 
-      encrypter.DH_keyPairToFiles(kp, basePath + "/keys/client/");
+      CryptoUtil.DH_keyPairToFiles(kp, basePath + "/keys/client/");
     }
     // === DIFFIE HELLMAN: 4 ===
     // Assuming the server generated it's keypair the public key of the server
@@ -93,7 +94,7 @@ class TCPClient {
       System.out.println("SERVER PUBKEY: " + new String(otherPubkBytes));
 
       // === DIFFIE HELLMAN: 5 ===
-      DH_DESSecret = encrypter.DH_genDESSecret(kp.getPrivate(), otherPubkBytes);
+      DH_DESSecret = CryptoUtil.DH_genDESSecret(kp.getPrivate(), otherPubkBytes);
     } catch (FileNotFoundException e) {}
 
     System.out.println("DES KEY LEN: " + new String(DH_DESSecret.getEncoded()).length() + "\nKEY: "
@@ -101,7 +102,7 @@ class TCPClient {
 
     // === MESSAGING PHASE ===
     // Encrypt the clear text
-    cipherBytes = encrypter.DES_encrypt(clearBytes, DH_DESSecret);
+    cipherBytes = CryptoUtil.DES_encrypt(clearBytes, DH_DESSecret);
     System.out.println("CIPHER TEXT LEN: " + cipherBytes.length);
     System.out.println("=== MESSAGE ENCRYPTED ===\nSENDING CIPHER TEXT\n"
                        + new String());
@@ -109,6 +110,14 @@ class TCPClient {
     byte[] b64_cipherText = Base64.getEncoder().encode(cipherBytes);
     toServer.writeBytes(new String(b64_cipherText)); 
     toServer.flush();
+
+
+    // === RSA BASED SECRET EXCHANGE ===
+    // 1. Generate a new DES secret key
+    // 2. encrypt the DES secret using the recipients public key
+    // 3. Transmit the encrypted secret to the recipient
+    // 4. await response encrypted with this client's public key
+    // 5. decrypt response stating that message was received
     serverConnSock.close(); 
   }
 }

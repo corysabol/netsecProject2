@@ -7,8 +7,17 @@ import java.util.Base64;
 import javax.crypto.*;
 import java.security.*;
 
-class TCPServer {
+class Server {
   public static void main(String argv[]) throws Exception {
+
+    // Benchmark values
+    long DES_startTime;
+    long DES_endTime;
+    long RSA_startTime;
+    long RSA_endTime;
+    long HMAC_startTime;
+    long HMAC_endTime;
+
     ServerSocket welcomeSocket = new ServerSocket(6789);
     SecretKey DH_DESSecret = null;
     String dhParams = "";
@@ -21,17 +30,6 @@ class TCPServer {
       
       KeyPair kp = null;
       String basePath = new File("").getAbsolutePath();
-
-      // Check if the key files exist already
-      File t1 = new File(basePath + "/keys/server/dh_public");
-      File t2 = new File(basePath + "/keys/server/dh_private");
-      if (t1.exists() && t2.exists()) {
-        System.out.println("=== KEY FILES ALREADY EXIST, OVERWRITTING ===");
-        t1.delete();
-        t2.delete();
-      } else {
-        System.out.println("=== KEY FILES WILL BE CREATED ===");
-      }
 
       // === PERFORM DIFFIE HELLMAN ONCE WE GET PARAMS FROM CLIENT ===
       // params should be the first thing that we get from the client
@@ -49,8 +47,9 @@ class TCPServer {
       // === DIFFIE HELLMAN: 4 ===
       byte[] otherPubkBytes = null;
       try {
-        // will relative path work?
         Path path = Paths.get(basePath + "/keys/client/dh_public");
+        System.out.println("Waiting for client DH public key to become available");
+        while (!path.toFile().exists()) {} // wait for file to be available
         otherPubkBytes = Files.readAllBytes(path.toAbsolutePath());
 
         // === DIFFIE HELLMAN: 5 ===
@@ -62,8 +61,7 @@ class TCPServer {
 
       
       // === MESSAGING PHASE ===
-
-      // get the cipher text from the client and decrypt it
+      // get the cipher text from the client and decrypt it using DES secret
       System.out.println("=== RECEIVING ENCRYPTED MESSAGE ===\nDecrypting"); 
       String cipherText = inFromClient.readLine();
       byte[] b64_decodedCipherText = Base64.getDecoder().decode(cipherText.getBytes());
@@ -72,6 +70,32 @@ class TCPServer {
       System.out.println("B64 CIPHER TEXT: " + cipherText);
       System.out.println("=== DECRYPTED MESSAGE ===\n" + new String(clearText));
 
+      // === RSA ===
+      // Get the encrypted key and decrypt it
+      System.out.println("=== RECEIVING RSA ENCRYPTED DES SECRET WITH HMAC ===");
+      String RSACipherText = inFromClient.readLine();
+      byte[] b64_decodedRSACipherText = Base64.getDecoder().decode(RSACipherText.getBytes());
+      String RSA_HMAC = inFromClient.readLine();
+      byte[] b64_decodedRSA_HMAC = Base64.getDecoder().decode(RSA_HMAC.getBytes());
+      System.out.println("=== VERIFYING MESSAGE INTEGRITY ===");
+
+      // get the RSA public key of the client
+      byte[] clientRSAPubkBytes = null;
+      try {
+        Path path = Paths.get(basePath + "/keys/client/RSA_public.key");
+        System.out.println("Waiting for client RSA public key to become available");
+        while (!path.toFile().exists()) {} // wait for file to be available
+        clientRSAPubkBytes = Files.readAllBytes(path.toAbsolutePath());
+      } catch (FileNotFoundException e) {}
+
+      // check the hash
+      boolean validMessage = CryptoUtil.HMAC_compareHash(b64_decodedRSACipherText, b64_decodedRSA_HMAC, DH_DESSecret);
+      if (!validMessage) {
+        System.out.println("=== MESSAGE INTEGRITY COULD NOT BE VALIDATED, REJECTING ===");
+      }
+
+      // Clean up the key files
+      CryptoUtil.cleanUpKeyFiles(basePath + "/keys/server/");
     }
   }
 }

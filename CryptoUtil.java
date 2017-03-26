@@ -1,6 +1,5 @@
 import java.net.*;
 import java.io.*;
-
 import java.security.*;
 import java.security.spec.*;
 import java.security.spec.X509EncodedKeySpec;
@@ -29,6 +28,7 @@ public final class CryptoUtil {
   public static final String DES_KEY_ALGORITHM = "DES";
   public static final String RSA_ALGORITHM = "RSA/ECB/PKCS1Padding";
   public static final String RSA_KEY_ALGORITHM = "RSA";
+  public static final String HMAC_ALGORITHM = "HmacSHA1";
 
   /**
    * @author Cory Sabol - cssabol@uncg.edu
@@ -100,6 +100,7 @@ public final class CryptoUtil {
     byte[] pubkBytes = pubk.getEncoded();
     File privkFile = new File(dirPath + "dh_private");
     File pubkFile = new File(dirPath + "dh_public");
+
     FileOutputStream privOut = null;
     FileOutputStream pubOut = null;
       
@@ -139,10 +140,8 @@ public final class CryptoUtil {
 
     return secretKey;
   }
-  // ===========
 
   // === DES ===
-
   /**
    * @param byte[] data - The byte array containing the data to be transformed
    *
@@ -244,10 +243,6 @@ public final class CryptoUtil {
 
   }
 
-  public static void RSA_signMessage() {
-
-  }
- 
   public static byte[] RSA_encrypt(byte[] data, PublicKey pubk) throws Exception {
     byte[] cipherBytes = null;
     Cipher c = Cipher.getInstance(CryptoUtil.RSA_ALGORITHM);
@@ -268,8 +263,51 @@ public final class CryptoUtil {
   // ===========
   
   // === HMAC ===
+  public static byte[] HMAC_hash(byte[] data, SecretKey key) throws Exception {
+    byte[] dataHash = null;
+
+    Mac m = Mac.getInstance(CryptoUtil.HMAC_ALGORITHM);
+    //SecretKeySpec signingKey = new SecretKeySpec(key.getBytes(), HMAC_ALGORITHM);
+    m.init(key);
+
+    dataHash = m.doFinal(data);
+
+    return dataHash;
+  }
+
+  /**
+   * @param byte[] data
+   * @param byte[] hash
+   * @param SecretKey key
+   * @return boolean
+   *
+   * Hashes data with shared secret and compares with received hash. If hashes
+   * are the same returns true, false other wise
+   */
+  public static boolean HMAC_compareHash(byte[] data, byte[] hash, SecretKey key) throws Exception {
+    byte[] dataHash = null;
+    dataHash = CryptoUtil.HMAC_hash(data, key);
+    String h1 = new String(dataHash);
+    String h2 = new String(hash);
+
+    if (h1.equals(h2)) {
+      return true;
+    }
   
+    return false;
+  }
 
   // ============
+  
+
+  public static boolean cleanUpKeyFiles(String dir) {
+    
+    File f1 = new File(dir + "dh_public");
+    File f2 = new File(dir + "dh_private");
+    File f3 = new File(dir + "RSA_public.key");
+    File f4 = new File(dir + "RSA_private.key");
+
+    return (f1.delete() && f2.delete() && f3.delete() && f4.delete());
+  }
 }
 

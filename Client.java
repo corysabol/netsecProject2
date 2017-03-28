@@ -6,6 +6,7 @@ import java.nio.charset.*;
 import java.util.Base64;
 import javax.crypto.*;
 import java.security.*;
+import java.security.spec.X509EncodedKeySpec;
  
 class Client {
 
@@ -29,7 +30,7 @@ class Client {
     String dhParams = "";
 
     // RSA variables
-    KeyPair RSA_kp = RSA_kp = CryptoUtil.RSA_genKeyPair();
+    KeyPair RSA_kp = CryptoUtil.RSA_genKeyPair();
     // create the RSA keypair files
     CryptoUtil.RSA_keysToFiles(RSA_kp, basePath + "/keys/client/");
 
@@ -48,10 +49,9 @@ class Client {
     toServer.flush();
 
     // === RSA BASED SECRET EXCHANGE ===
-    RSA_kp = doRSAExchange(DESSecret);
-    
-    serverConnSock.close(); 
+    doRSAExchange(toServer, DESSecret, basePath);
 
+    serverConnSock.close(); 
     // Delete the key files
     CryptoUtil.cleanUpKeyFiles(basePath + "/keys/client/"); 
   }
@@ -107,7 +107,8 @@ class Client {
     return DESSecret;
   }
 
-  public static KeyPair doRSAExchange(SecretKey DESSecret) {
+  public static void doRSAExchange(DataOutputStream toServer, SecretKey DESSecret, String basePath) 
+    throws Exception {
   
     // === RSA BASED SECRET EXCHANGE ===
     // 1. Simply transfer the existing DES secret the was established with DH 
@@ -115,8 +116,32 @@ class Client {
     // 3. Transmit the encrypted secret to the recipient
     // 4. await response encrypted with this client's public key
     // 5. decrypt response stating that message was received
+    byte[] RSA_cipherBytes = null; 
+    PublicKey otherPublicKey = null;
+    byte[] otherPubkBytes = null;
+    // Need to wait for server keys to be created
+    try {
+      Path path = Paths.get(basePath + "/keys/server/RSA_public.key");
+      System.out.println("Waiting for server RSA public key to become available");
+      while (!path.toFile().exists()) {} // wait for file to be available
+      System.out.println("File ready... Reading.");
+      otherPubkBytes = Files.readAllBytes(path.toAbsolutePath());
 
-    return null;
+      System.out.println("SERVER RSA PUBKEY b64: " 
+          + Base64.getEncoder().encode(otherPubkBytes));
+
+    } catch (FileNotFoundException e) {}
+
+    X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(otherPubkBytes);
+    KeyFactory keyFact = KeyFactory.getInstance("RSA");
+    otherPublicKey = keyFact.generatePublic(x509KeySpec);
+
+    // we need to now encrypt the DESSecret and send it to the server
+    RSA_cipherBytes = CryptoUtil.RSA_encrypt(DESSecret.getEncoded(), otherPublicKey);
+    // send over the Ecrypted DES key
+    toServer.write(RSA_cipherBytes);
+    toServer.writeBytes("\n");
+    toServer.flush();
   }
 
   // specifically check if the client dh keys exist

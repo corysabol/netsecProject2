@@ -71,14 +71,9 @@ class Server {
       System.out.println("=== DECRYPTED MESSAGE ===\n" + new String(clearText));
 
       // === RSA ===
-      // Get the encrypted key and decrypt it
-      System.out.println("=== RECEIVING RSA ENCRYPTED DES SECRET WITH HMAC ===");
-      String RSACipherText = inFromClient.readLine();
-      byte[] b64_decodedRSACipherText = Base64.getDecoder().decode(RSACipherText.getBytes());
-      String RSA_HMAC = inFromClient.readLine();
-      byte[] b64_decodedRSA_HMAC = Base64.getDecoder().decode(RSA_HMAC.getBytes());
-      System.out.println("=== VERIFYING MESSAGE INTEGRITY ===");
-
+      // Get the encrypted DES key and decrypt it
+      System.out.println("=== RECEIVING RSA ENCRYPTED DES SECRET ===");
+      String RSA_DESKeyCipher = inFromClient.readLine();
       // get the RSA public key of the client
       byte[] clientRSAPubkBytes = null;
       try {
@@ -88,8 +83,19 @@ class Server {
         clientRSAPubkBytes = Files.readAllBytes(path.toAbsolutePath());
       } catch (FileNotFoundException e) {}
 
+      // === GET RSA ENCRYPTED MESSAGE W/ HMAC: [Network Security,HMAC] ===
+      String RSACipherText = inFromClient.readLine(); 
+      // parse the message apart for the HMAC and the actual message itself.
+      // message is two base64 encoded messages separated by comma? 
+      String RSA_MsgHMAC = null;
+      String RSA_Msg = null;
+      byte[] b64_decodedRSACipherText = Base64.getDecoder().decode(RSACipherText.getBytes());
+      byte[] b64_decodedMsg_HMAC = Base64.getDecoder().decode(RSA_MsgHMAC.getBytes());
+      
+      // === HMAC MESSAGE INTEGRITY CHECK ===
+      System.out.println("=== VERIFYING MESSAGE INTEGRITY ===");
       // check the hash
-      boolean validMessage = CryptoUtil.HMAC_compareHash(b64_decodedRSACipherText, b64_decodedRSA_HMAC, DH_DESSecret);
+      boolean validMessage = CryptoUtil.HMAC_compareHash(b64_decodedRSACipherText, b64_decodedMsg_HMAC, DH_DESSecret);
       if (!validMessage) {
         System.out.println("=== MESSAGE INTEGRITY COULD NOT BE VALIDATED, REJECTING ===");
       }

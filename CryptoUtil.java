@@ -260,7 +260,6 @@ public final class CryptoUtil {
 
     return clearBytes;
   }
-  // ===========
   
   // === HMAC ===
   public static byte[] HMAC_hash(byte[] data, SecretKey key) throws Exception {
@@ -298,7 +297,6 @@ public final class CryptoUtil {
   }
 
   // ============
-  
 
   public static boolean cleanUpKeyFiles(String dir) {
     

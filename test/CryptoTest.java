@@ -12,8 +12,6 @@ public class CryptoTest {
   @Test
   public void encryptsMessage_DES() throws NoSuchAlgorithmException, InvalidKeyException, 
          IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException {
-    // instance of crypto helper
-    Crypto DES = new Crypto();
     
     // === TEST DATA ===
     String clearText = "Network Security";
@@ -35,7 +33,7 @@ public class CryptoTest {
     
     // === PERFORM DES ENCRYPTION ON MESSAGE ===
     try {
-      cipherBytes = DES.DES_encrypt(clearBytes, testIV, testKey_inst);
+      cipherBytes = CryptoUtil.DES_encrypt(clearBytes, testIV, testKey_inst);
     } catch (Exception e) {
 
     }
@@ -48,8 +46,6 @@ public class CryptoTest {
   @Test
   public void decryptsMessage_DES() throws NoSuchAlgorithmException, InvalidKeyException, 
          IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException {
-    // instance of crypto helper
-    Crypto DES = new Crypto();
     
     // === TEST DATA ===
     String correctMsg = "Network Security";
@@ -70,11 +66,34 @@ public class CryptoTest {
     
     // === PERFORM DES ENCRYPTION ON MESSAGE ===
     try {
-      decryptedMsg = DES.DES_decrypt(encryptedMsg, testIV, testKey_inst);
+      decryptedMsg = CryptoUtil.DES_decrypt(encryptedMsg, testIV, testKey_inst);
     } catch (Exception e) {
 
     }
 
     assertEquals(correctMsg, new String(decryptedMsg));   
+  }
+
+  @Test
+  public void encryptsMessage_RSA() throws Exception {
+    // === TEST DATA ===
+    String correctMsg = "Network Security";
+    
+    // generate our keys for testing puproses first
+    KeyPair kp = CryptoUtil.RSA_genKeyPair(); 
+    System.out.println("PUBLIC KEY b64: \n" 
+        + Base64.getEncoder().encode(kp.getPublic().getEncoded()));
+    System.out.println("PRIVATE KEY b64: \n" 
+        + Base64.getEncoder().encode(kp.getPrivate().getEncoded()));
+    
+    String correctMsg_b64 = " ";
+    byte[] cipherBytes_b64 = {' '};
+
+    assertEquals(correctMsg_b64, new String(cipherBytes_b64));
+  }
+
+  @Test
+  public void decryptsMessage_RSA() throws Exception {
+
   }
 }

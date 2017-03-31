@@ -23,6 +23,8 @@ class Server {
     String dhParams = "";
  
     while(true) { // wait for a connection
+      System.out.println("=== Awaiting a connection ===\n");
+
       Socket connectionSocket = welcomeSocket.accept();
       BufferedReader inFromClient =
         new BufferedReader(new InputStreamReader(connectionSocket.getInputStream()));
@@ -57,7 +59,7 @@ class Server {
       } catch (FileNotFoundException e) {}
 
       System.out.println("DES KEY LEN: " + new String(DH_DESSecret.getEncoded()).length() + "\nKEY: "
-                         + new String(DH_DESSecret.getEncoded()));
+                         + new String(Base64.getEncoder().encode(DH_DESSecret.getEncoded())));
 
       
       // === MESSAGING PHASE ===
@@ -71,33 +73,49 @@ class Server {
       System.out.println("=== DECRYPTED MESSAGE ===\n" + new String(clearText));
 
       // === RSA ===
+      // create the server RSA keypair
+      KeyPair RSA_kp = CryptoUtil.RSA_genKeyPair();
+      // create the RSA keypair files
+      CryptoUtil.RSA_keysToFiles(RSA_kp, basePath + "/keys/server/");
+
       // Get the encrypted DES key and decrypt it
       System.out.println("=== RECEIVING RSA ENCRYPTED DES SECRET ===");
       String RSA_DESKeyCipher = inFromClient.readLine();
-      // get the RSA public key of the client
-      byte[] clientRSAPubkBytes = null;
-      try {
-        Path path = Paths.get(basePath + "/keys/client/RSA_public.key");
-        System.out.println("Waiting for client RSA public key to become available");
-        while (!path.toFile().exists()) {} // wait for file to be available
-        clientRSAPubkBytes = Files.readAllBytes(path.toAbsolutePath());
-      } catch (FileNotFoundException e) {}
+
+      byte[] RSA_DESKeyBytes = 
+        CryptoUtil.RSA_decrypt(Base64.getDecoder().decode(RSA_DESKeyCipher), RSA_kp.getPrivate());
+
+      System.out.println("=== DES KEY DECRYPTED ===");
+      DH_DESSecret = CryptoUtil.bytesToSecKey(RSA_DESKeyBytes);
+      System.out.println("DES KEY: " + new String(Base64.getEncoder().encode(DH_DESSecret.getEncoded())));
 
       // === GET RSA ENCRYPTED MESSAGE W/ HMAC: [Network Security,HMAC] ===
       String RSACipherText = inFromClient.readLine(); 
       // parse the message apart for the HMAC and the actual message itself.
       // message is two base64 encoded messages separated by comma? 
-      String RSA_MsgHMAC = null;
-      String RSA_Msg = null;
-      byte[] b64_decodedRSACipherText = Base64.getDecoder().decode(RSACipherText.getBytes());
-      byte[] b64_decodedMsg_HMAC = Base64.getDecoder().decode(RSA_MsgHMAC.getBytes());
+      String b64_MsgHMAC = null;
+      String encMsg = null;
+      System.out.println("=== RSA MESSAGE + HMAC RECEIVED ===");
+      //System.out.println("MSG PAIR: " + b64_decodedMsg);
+      String[] splitMsg = new String(RSACipherText).split(",");
+      b64_MsgHMAC = splitMsg[1];
+      encMsg = splitMsg[0];
+      // decrypt the message
+      byte[] decMsg = CryptoUtil.RSA_decrypt(Base64.getDecoder().decode(encMsg.getBytes()), 
+          RSA_kp.getPrivate());
+
+      System.out.println("MSG: " + new String(decMsg) + " , b64 HMAC: " + b64_MsgHMAC);
       
       // === HMAC MESSAGE INTEGRITY CHECK ===
       System.out.println("=== VERIFYING MESSAGE INTEGRITY ===");
       // check the hash
-      boolean validMessage = CryptoUtil.HMAC_compareHash(b64_decodedRSACipherText, b64_decodedMsg_HMAC, DH_DESSecret);
+      boolean validMessage = CryptoUtil.HMAC_compareHash(decMsg, 
+          Base64.getDecoder().decode(b64_MsgHMAC), DH_DESSecret);
+
       if (!validMessage) {
-        System.out.println("=== MESSAGE INTEGRITY COULD NOT BE VALIDATED, REJECTING ===");
+        System.out.println("=== MESSAGE INTEGRITY COULD NOT BE VALIDATED, REJECTING ===\n");
+      } else {
+        System.out.println("=== MESSAGE INTEGRITY VERIFIED ===\n");
       }
 
       // Clean up the key files

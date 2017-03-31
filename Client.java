@@ -46,10 +46,13 @@ class Client {
     // Base 64 encode the cipher text
     byte[] b64_cipherText = Base64.getEncoder().encode(cipherBytes);
     toServer.writeBytes(new String(b64_cipherText)); 
+    toServer.writeBytes("\n");
     toServer.flush();
 
     // === RSA BASED SECRET EXCHANGE ===
     doRSAExchange(toServer, DESSecret, basePath);
+    // === SEND RSA ENCRYPTED MESSAGE ===
+    sendRSAMessage(toServer, DESSecret, basePath);
 
     serverConnSock.close(); 
     // Delete the key files
@@ -132,14 +135,54 @@ class Client {
 
     } catch (FileNotFoundException e) {}
 
-    X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(otherPubkBytes);
+    /*X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(otherPubkBytes);
     KeyFactory keyFact = KeyFactory.getInstance("RSA");
-    otherPublicKey = keyFact.generatePublic(x509KeySpec);
+    otherPublicKey = keyFact.generatePublic(x509KeySpec);*/
+    otherPublicKey = CryptoUtil.bytesToPubKey(otherPubkBytes, "RSA");
 
     // we need to now encrypt the DESSecret and send it to the server
     RSA_cipherBytes = CryptoUtil.RSA_encrypt(DESSecret.getEncoded(), otherPublicKey);
     // send over the Ecrypted DES key
-    toServer.write(RSA_cipherBytes);
+    toServer.write(Base64.getEncoder().encode(RSA_cipherBytes));
+    toServer.writeBytes("\n");
+    toServer.flush();
+  }
+
+  public static void sendRSAMessage(DataOutputStream toServer, SecretKey secretKey, String basePath) 
+    throws Exception {
+
+    String finalMsg = "";
+    byte[] finalMsgBytes = null;
+    String msg = "Network Security";
+    byte[] RSA_msgBytes = null;
+    byte[] msgHMAC = CryptoUtil.HMAC_hash(msg.getBytes(), secretKey); 
+    byte[] otherPubkBytes = null;
+    PublicKey otherPublicKey = null;
+    // Need to wait for server keys to be created
+    try {
+      Path path = Paths.get(basePath + "/keys/server/RSA_public.key");
+      System.out.println("Waiting for server RSA public key to become available");
+      while (!path.toFile().exists()); // wait for file to be available
+      System.out.println("File ready... Reading.");
+      otherPubkBytes = Files.readAllBytes(path.toAbsolutePath());
+
+      System.out.println("SERVER RSA PUBKEY b64: " 
+          + Base64.getEncoder().encode(otherPubkBytes));
+
+    } catch (FileNotFoundException e) {}
+    // convert otherPubkBytes to x509 public key
+    otherPublicKey = CryptoUtil.bytesToPubKey(otherPubkBytes, "RSA");
+    
+    // encrypt the message pair
+    RSA_msgBytes = CryptoUtil.RSA_encrypt(msg.getBytes(), otherPublicKey);
+    // append the HMAC to the message
+    finalMsg = new String(Base64.getEncoder().encode(RSA_msgBytes)) 
+      + "," + new String(Base64.getEncoder().encode(msgHMAC));
+
+    System.out.println(finalMsg);
+    System.out.println("FINAL MSG PAIR: " + finalMsg);
+    // Send the message
+    toServer.writeBytes(finalMsg);
     toServer.writeBytes("\n");
     toServer.flush();
   }

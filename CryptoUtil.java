@@ -296,8 +296,31 @@ public final class CryptoUtil {
     return false;
   }
 
-  // ============
+  public static PublicKey bytesToPubKey(byte[] keyBytes, String algorithm) throws Exception {
+    X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(keyBytes);
+    KeyFactory keyFact = KeyFactory.getInstance(algorithm);
+    PublicKey pubKey = keyFact.generatePublic(x509KeySpec);
+    
+    return pubKey;
+  }
 
+  public static PrivateKey bytesToPrivKey(byte[] keyBytes, String algorithm) throws Exception {
+    X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(keyBytes);
+    KeyFactory keyFact = KeyFactory.getInstance(algorithm);
+    PrivateKey privKey = keyFact.generatePrivate(x509KeySpec);
+    
+    return privKey;
+  }
+  
+  public static SecretKey bytesToSecKey(byte[] keyBytes) throws Exception {
+    DESKeySpec desKeySpec = new DESKeySpec(keyBytes);
+    SecretKeyFactory keyFact = SecretKeyFactory.getInstance("DES");
+    SecretKey secKey = keyFact.generateSecret(desKeySpec);
+    
+    return secKey;
+  }
+
+  // ============
   public static boolean cleanUpKeyFiles(String dir) {
     
     File f1 = new File(dir + "dh_public");

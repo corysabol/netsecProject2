@@ -54,8 +54,13 @@ class Client {
     // === SEND RSA ENCRYPTED MESSAGE ===
     sendRSAMessage(toServer, DESSecret, basePath);
 
+
+    // === Run Client side benchmarks ===
+    System.out.println(benchMarkCrypto(toServer, DESSecret));
+
     serverConnSock.close(); 
     // Delete the key files
+    System.out.println("\n");
     CryptoUtil.cleanUpKeyFiles(basePath + "/keys/client/"); 
   }
 
@@ -211,15 +216,16 @@ class Client {
     return false;
   }
 
-  public static String benchMarkCrypto(SecretKey DH_DESSecret) throws Exception {
+  public static String benchMarkCrypto(DataOutputStream toServer, 
+      SecretKey DH_DESSecret) throws Exception {
     // === BENCH MARKS 10000 word list ===
     PublicKey RSA_serverPubKey = null;
 
     File wordList = new File("10000words.txt");
     BufferedReader wordReader = new BufferedReader(new FileReader(wordList));
     String word = null;
-    long startTime;
-    long estTime;
+    long startTime = 0;
+    long estTime = 0;
     byte[] encWordBytes = null;
 
     long DES_elapsedTime = 0;
@@ -233,6 +239,19 @@ class Client {
       DES_elapsedTime += estTime;
     }
     System.out.println("DES ELAPSED ENCRYPTION TIME: " + DES_elapsedTime);
+    wordReader.close();
+
+    wordReader = new BufferedReader(new FileReader(wordList));
+    startTime = 0;
+    estTime = 0;
+    String basePath = new File("").getAbsolutePath();
+    Path RSA_serverPubKeyPath = Paths.get(basePath + "/keys/server/RSA_public.key");
+
+    RSA_serverPubKey = 
+      CryptoUtil.bytesToPubKey(
+          Files.readAllBytes(RSA_serverPubKeyPath.toAbsolutePath()),
+          "RSA"     
+      );
 
     long RSA_elapsedTime = 0;
     // RSA ENCRYPTION
@@ -246,7 +265,7 @@ class Client {
       RSA_elapsedTime += estTime;
     }
 
-    System.out.println("DES ELAPSED ENCRYPTION TIME: " + DES_elapsedTime);
+    System.out.println("RSA ELAPSED ENCRYPTION TIME: " + RSA_elapsedTime);
     
     return null;
   }

@@ -3,6 +3,7 @@ import java.io.*;
 import java.security.*;
 import java.security.spec.*;
 import java.security.spec.X509EncodedKeySpec;
+import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.InvalidParameterSpecException;
 import java.security.AlgorithmParameterGenerator;
 import javax.crypto.*;
@@ -212,7 +213,7 @@ public final class CryptoUtil {
   // === RSA ===
   public static KeyPair RSA_genKeyPair() throws Exception {
     KeyPairGenerator kpGen = KeyPairGenerator.getInstance(CryptoUtil.RSA_KEY_ALGORITHM);
-    kpGen.initialize(1024);
+    kpGen.initialize(2048);
     KeyPair kp = kpGen.generateKeyPair();
     return kp;
   }
@@ -305,6 +306,7 @@ public final class CryptoUtil {
   }
 
   public static PrivateKey bytesToPrivKey(byte[] keyBytes, String algorithm) throws Exception {
+    RSAPrivateCrtKeySpec spec = RSAPrivateCrtKeySpec(keyBytes);
     X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(keyBytes);
     KeyFactory keyFact = KeyFactory.getInstance(algorithm);
     PrivateKey privKey = keyFact.generatePrivate(x509KeySpec);

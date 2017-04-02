@@ -1,0 +1,11 @@
+10000 words cryptographic transform times:
+
+==== ENCRYPTION TIMES ====
+DES: 292209661 (ns) --> 0.292209661 (s)
+RSA: 1205428553 (ns) --> 1.205428553 (s) 
+==========================
+
+==== DECRYPTION TIMES ====
+DES:
+RSA:
+==========================

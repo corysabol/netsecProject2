@@ -118,8 +118,67 @@ class Server {
         System.out.println("=== MESSAGE INTEGRITY VERIFIED ===\n");
       }
 
+
+      // === BENCHMARKS 10000 WORD LIST ===
+      benchMarkCrypto(inFromClient, DH_DESSecret);
+
       // Clean up the key files
-      CryptoUtil.cleanUpKeyFiles(basePath + "/keys/server/");
+      //CryptoUtil.cleanUpKeyFiles(basePath + "/keys/server/");
     }
+  }
+
+    public static String benchMarkCrypto(BufferedReader inFromClient, 
+      SecretKey DH_DESSecret) throws Exception {
+    // === BENCH MARKS 10000 word list ===
+    PrivateKey RSA_serverPrivKey = null;
+
+    //File wordList = new File("10000words.txt");
+    //BufferedReader wordReader = new BufferedReader(new FileReader(wordList));
+
+    String word = null;
+    long startTime = 0;
+    long estTime = 0;
+    byte[] encWordBytes = null;
+
+    long DES_elapsedTime = 0;
+    // DES ENCRYPTION
+    while ((word = inFromClient.readLine()) != null) {
+      startTime = System.nanoTime();
+      encWordBytes = CryptoUtil.DES_decrypt(word.getBytes(), DH_DESSecret);
+      estTime = System.nanoTime() - startTime;
+      // send the encrypted word to the server to time decryption
+      // sum times
+      DES_elapsedTime += estTime;
+    }
+    System.out.println("DES ELAPSED DECRYPTION TIME: " + DES_elapsedTime);
+    //wordReader.close();
+
+    //wordReader = new BufferedReader(new FileReader(wordList));
+    startTime = 0;
+    estTime = 0;
+    String basePath = new File("").getAbsolutePath();
+    Path RSA_serverPrivKeyPath = Paths.get(basePath + "/keys/server/RSA_private.key");
+
+    RSA_serverPrivKey = 
+      CryptoUtil.bytesToPrivKey(
+          Files.readAllBytes(RSA_serverPrivKeyPath.toAbsolutePath()),
+          "RSA"     
+      );
+
+    long RSA_elapsedTime = 0;
+    // RSA ENCRYPTION
+    // need the server public key
+    while ((word = inFromClient.readLine()) != null) {
+      startTime = System.nanoTime();
+      encWordBytes = CryptoUtil.RSA_decrypt(word.getBytes(), RSA_serverPrivKey);
+      estTime = System.nanoTime() - startTime;
+      // send the encrypted word to the server to time decryption
+      // sum times
+      RSA_elapsedTime += estTime;
+    }
+
+    System.out.println("RSA ELAPSED DECRYPTION TIME: " + RSA_elapsedTime);
+    
+    return null;
   }
 }

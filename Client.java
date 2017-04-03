@@ -56,7 +56,8 @@ class Client {
 
 
     // === Run Client side benchmarks ===
-    System.out.println(benchMarkCrypto(toServer, DESSecret));
+    System.out.println("=== BENCHMARK ===");
+    benchMarkCrypto(toServer, DESSecret);
 
     serverConnSock.close(); 
     // Delete the key files
@@ -185,7 +186,7 @@ class Client {
       + "," + new String(Base64.getEncoder().encode(msgHMAC));
 
     System.out.println(finalMsg);
-    System.out.println("FINAL MSG PAIR: " + finalMsg);
+    System.out.println("FINAL MSG PAIR: " + finalMsg + "\n");
     // Send the message
     toServer.writeBytes(finalMsg);
     toServer.writeBytes("\n");
@@ -216,7 +217,7 @@ class Client {
     return false;
   }
 
-  public static String benchMarkCrypto(DataOutputStream toServer, 
+  public static void benchMarkCrypto(DataOutputStream toServer, 
       SecretKey DH_DESSecret) throws Exception {
     // === BENCH MARKS 10000 word list ===
     PublicKey RSA_serverPubKey = null;
@@ -231,7 +232,6 @@ class Client {
 
     long DES_elapsedTime = 0;
     // DES ENCRYPTION
-    System.out.println("\n\n\n");
     while ((word = wordReader.readLine()) != null) {
       startTime = System.nanoTime();
       encWordBytes = CryptoUtil.DES_encrypt(word.getBytes(), DH_DESSecret);
@@ -265,7 +265,6 @@ class Client {
     // RSA ENCRYPTION
     encWords = "";
     // need the server public key
-    System.out.println("\n\n\n");
     while ((word = wordReader.readLine()) != null) {
       startTime = System.nanoTime();
       encWordBytes = CryptoUtil.RSA_encrypt(word.getBytes(), RSA_serverPubKey);
@@ -275,15 +274,31 @@ class Client {
       RSA_elapsedTime += estTime;
       System.out.print("RSA encryption elapsed time: " + RSA_elapsedTime + "(ns)\r");
     }
+    wordReader.close();
     
     toServer.writeBytes(encWords);
     toServer.writeBytes("\n");
 
     System.out.println("RSA ELAPSED ENCRYPTION TIME: " + RSA_elapsedTime);
 
-    System.out.println("=== ENCRYPTION, DES: " + DES_elapsedTime + "(ns) RSA: " + RSA_elapsedTime + "(ns)");
-    
-    return null;
+    // === HMAC BENCHMARK ===
+    wordReader = new BufferedReader(new FileReader(wordList));
+    startTime = 0;
+    estTime = 0;
+    long HMAC_elapsedTime = 0;
+    while ((word = wordReader.readLine()) != null) {
+      startTime = System.nanoTime();
+      encWordBytes = CryptoUtil.HMAC_hash(word.getBytes(), DH_DESSecret);
+      estTime = System.nanoTime() - startTime;
+      HMAC_elapsedTime += estTime; 
+      System.out.print("HMAC hashing elapsed time: " + HMAC_elapsedTime + "(ns)\r");
+    }
+
+    System.out.println("HMAC ELAPSED HASHING TIME: " + HMAC_elapsedTime);
+
+    System.out.println("=== ENCRYPTION, DES: " + DES_elapsedTime 
+        + "(ns) RSA: " + RSA_elapsedTime + "(ns) HMAC: "
+        + HMAC_elapsedTime + "(ns)");
   }
 
 }

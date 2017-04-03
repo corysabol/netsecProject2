@@ -220,6 +220,7 @@ class Client {
       SecretKey DH_DESSecret) throws Exception {
     // === BENCH MARKS 10000 word list ===
     PublicKey RSA_serverPubKey = null;
+    String encWords = "";
 
     File wordList = new File("10000words.txt");
     BufferedReader wordReader = new BufferedReader(new FileReader(wordList));
@@ -230,16 +231,23 @@ class Client {
 
     long DES_elapsedTime = 0;
     // DES ENCRYPTION
+    System.out.println("\n\n\n");
     while ((word = wordReader.readLine()) != null) {
       startTime = System.nanoTime();
       encWordBytes = CryptoUtil.DES_encrypt(word.getBytes(), DH_DESSecret);
       estTime = System.nanoTime() - startTime;
-      // send the encrypted word to the server to time decryption
+      encWords += new String(Base64.getEncoder().encode(encWordBytes)) + ","; // build comma delim list of enc words
       // sum times
       DES_elapsedTime += estTime;
+      System.out.print("DES encryption elapsed time: " + DES_elapsedTime + "(ns)\r");
     }
     System.out.println("DES ELAPSED ENCRYPTION TIME: " + DES_elapsedTime);
     wordReader.close();
+
+    // Send DES enc words to server for decryption
+    toServer.writeBytes(encWords);
+    toServer.writeBytes("\n");
+    //System.out.println(encWords);
 
     wordReader = new BufferedReader(new FileReader(wordList));
     startTime = 0;
@@ -255,17 +263,25 @@ class Client {
 
     long RSA_elapsedTime = 0;
     // RSA ENCRYPTION
+    encWords = "";
     // need the server public key
+    System.out.println("\n\n\n");
     while ((word = wordReader.readLine()) != null) {
       startTime = System.nanoTime();
       encWordBytes = CryptoUtil.RSA_encrypt(word.getBytes(), RSA_serverPubKey);
       estTime = System.nanoTime() - startTime;
-      // send the encrypted word to the server to time decryption
+      encWords += new String(Base64.getEncoder().encode(encWordBytes)) + ",";
       // sum times
       RSA_elapsedTime += estTime;
+      System.out.print("RSA encryption elapsed time: " + RSA_elapsedTime + "(ns)\r");
     }
+    
+    toServer.writeBytes(encWords);
+    toServer.writeBytes("\n");
 
     System.out.println("RSA ELAPSED ENCRYPTION TIME: " + RSA_elapsedTime);
+
+    System.out.println("=== ENCRYPTION, DES: " + DES_elapsedTime + "(ns) RSA: " + RSA_elapsedTime + "(ns)");
     
     return null;
   }

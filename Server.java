@@ -120,35 +120,43 @@ class Server {
 
 
       // === BENCHMARKS 10000 WORD LIST ===
-      benchMarkCrypto(inFromClient, DH_DESSecret);
+      benchMarkCrypto(inFromClient, RSA_kp.getPrivate(), DH_DESSecret);
 
       // Clean up the key files
-      //CryptoUtil.cleanUpKeyFiles(basePath + "/keys/server/");
+      CryptoUtil.cleanUpKeyFiles(basePath + "/keys/server/");
     }
   }
 
     public static String benchMarkCrypto(BufferedReader inFromClient, 
-      SecretKey DH_DESSecret) throws Exception {
+      PrivateKey privKey, SecretKey DH_DESSecret) throws Exception {
     // === BENCH MARKS 10000 word list ===
-    PrivateKey RSA_serverPrivKey = null;
 
     //File wordList = new File("10000words.txt");
     //BufferedReader wordReader = new BufferedReader(new FileReader(wordList));
 
-    String word = null;
+    //String word = null;
+    String encWords = "";
+    String[] encWordsList = new String[10000];
     long startTime = 0;
     long estTime = 0;
     byte[] encWordBytes = null;
 
     long DES_elapsedTime = 0;
     // DES ENCRYPTION
-    while ((word = inFromClient.readLine()) != null) {
+    
+    encWords = inFromClient.readLine();
+    encWordsList = encWords.split(","); 
+
+    System.out.println("\n\n\n");
+    System.out.println("DES Decryption");
+    for (String word : encWordsList) {
       startTime = System.nanoTime();
-      encWordBytes = CryptoUtil.DES_decrypt(word.getBytes(), DH_DESSecret);
+      encWordBytes = CryptoUtil.DES_decrypt(Base64.getDecoder().decode(word.getBytes()), DH_DESSecret);
       estTime = System.nanoTime() - startTime;
       // send the encrypted word to the server to time decryption
       // sum times
       DES_elapsedTime += estTime;
+      System.out.print("DES decryption elapsed time: " + DES_elapsedTime + "(ns)\r");
     }
     System.out.println("DES ELAPSED DECRYPTION TIME: " + DES_elapsedTime);
     //wordReader.close();
@@ -156,28 +164,25 @@ class Server {
     //wordReader = new BufferedReader(new FileReader(wordList));
     startTime = 0;
     estTime = 0;
-    String basePath = new File("").getAbsolutePath();
-    Path RSA_serverPrivKeyPath = Paths.get(basePath + "/keys/server/RSA_private.key");
-
-    RSA_serverPrivKey = 
-      CryptoUtil.bytesToPrivKey(
-          Files.readAllBytes(RSA_serverPrivKeyPath.toAbsolutePath()),
-          "RSA"     
-      );
 
     long RSA_elapsedTime = 0;
-    // RSA ENCRYPTION
-    // need the server public key
-    while ((word = inFromClient.readLine()) != null) {
+    // RSA DECRYPTION
+
+    encWords = inFromClient.readLine();
+    encWordsList = encWords.split(",");
+
+    System.out.println("\n\n\n");
+    for (String word : encWordsList) {
       startTime = System.nanoTime();
-      encWordBytes = CryptoUtil.RSA_decrypt(word.getBytes(), RSA_serverPrivKey);
+      encWordBytes = CryptoUtil.RSA_decrypt(Base64.getDecoder().decode(word.getBytes()), privKey);
       estTime = System.nanoTime() - startTime;
-      // send the encrypted word to the server to time decryption
       // sum times
       RSA_elapsedTime += estTime;
+      System.out.print("RSA decryption elapsed time: " + RSA_elapsedTime + "(ns)\r");
     }
 
     System.out.println("RSA ELAPSED DECRYPTION TIME: " + RSA_elapsedTime);
+    System.out.println("=== DECRYPTION, DES: " + DES_elapsedTime + "(ns) RSA: " + RSA_elapsedTime + "(ns)");
     
     return null;
   }

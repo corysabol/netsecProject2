@@ -306,7 +306,6 @@ public final class CryptoUtil {
   }
 
   public static PrivateKey bytesToPrivKey(byte[] keyBytes, String algorithm) throws Exception {
-    RSAPrivateCrtKeySpec spec = RSAPrivateCrtKeySpec(keyBytes);
     X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(keyBytes);
     KeyFactory keyFact = KeyFactory.getInstance(algorithm);
     PrivateKey privKey = keyFact.generatePrivate(x509KeySpec);

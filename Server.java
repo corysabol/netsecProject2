@@ -120,6 +120,7 @@ class Server {
 
 
       // === BENCHMARKS 10000 WORD LIST ===
+      System.out.println("=== BENCHMARK ===");
       benchMarkCrypto(inFromClient, RSA_kp.getPrivate(), DH_DESSecret);
 
       // Clean up the key files
@@ -127,7 +128,7 @@ class Server {
     }
   }
 
-    public static String benchMarkCrypto(BufferedReader inFromClient, 
+  public static void benchMarkCrypto(BufferedReader inFromClient, 
       PrivateKey privKey, SecretKey DH_DESSecret) throws Exception {
     // === BENCH MARKS 10000 word list ===
 
@@ -147,8 +148,6 @@ class Server {
     encWords = inFromClient.readLine();
     encWordsList = encWords.split(","); 
 
-    System.out.println("\n\n\n");
-    System.out.println("DES Decryption");
     for (String word : encWordsList) {
       startTime = System.nanoTime();
       encWordBytes = CryptoUtil.DES_decrypt(Base64.getDecoder().decode(word.getBytes()), DH_DESSecret);
@@ -171,7 +170,6 @@ class Server {
     encWords = inFromClient.readLine();
     encWordsList = encWords.split(",");
 
-    System.out.println("\n\n\n");
     for (String word : encWordsList) {
       startTime = System.nanoTime();
       encWordBytes = CryptoUtil.RSA_decrypt(Base64.getDecoder().decode(word.getBytes()), privKey);
@@ -182,8 +180,6 @@ class Server {
     }
 
     System.out.println("RSA ELAPSED DECRYPTION TIME: " + RSA_elapsedTime);
-    System.out.println("=== DECRYPTION, DES: " + DES_elapsedTime + "(ns) RSA: " + RSA_elapsedTime + "(ns)");
-    
-    return null;
+    System.out.println("DECRYPTION, DES: " + DES_elapsedTime + "(ns) RSA: " + RSA_elapsedTime + "(ns)\n");
   }
 }

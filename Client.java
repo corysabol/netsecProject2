@@ -22,7 +22,7 @@ class Client {
     String cipherText;
 
     Socket serverConnSock = new Socket("localhost", 6789);
-    DataOutputStream toServer = new DataOutputStream(serverConnSock.getOutputStream());
+    BufferedOutputStream toServer = new BufferedOutputStream(serverConnSock.getOutputStream());
     BufferedReader inFromServer = new BufferedReader(new InputStreamReader(serverConnSock.getInputStream()));
 
     String basePath = new File("").getAbsolutePath();
@@ -45,15 +45,16 @@ class Client {
                        + "=== SENDING CIPHER TEXT===\n");
     // Base 64 encode the cipher text
     byte[] b64_cipherText = Base64.getEncoder().encode(cipherBytes);
-    toServer.writeBytes(new String(b64_cipherText)); 
-    toServer.writeBytes("\n");
+    //toServer.writeBytes(new String(b64_cipherText)); 
+    toServer.write(b64_cipherText);
+    //toServer.writeBytes("\n");
+    toServer.write("\n".getBytes());
     toServer.flush();
 
     // === RSA BASED SECRET EXCHANGE ===
     doRSAExchange(toServer, DESSecret, basePath);
     // === SEND RSA ENCRYPTED MESSAGE ===
     sendRSAMessage(toServer, DESSecret, basePath);
-
 
     // === Run Client side benchmarks ===
     System.out.println("=== BENCHMARK ===");
@@ -65,7 +66,7 @@ class Client {
     CryptoUtil.cleanUpKeyFiles(basePath + "/keys/client/"); 
   }
 
-  public static SecretKey doDiffieHellman(DataOutputStream toServer, String basePath) 
+  public static SecretKey doDiffieHellman(BufferedOutputStream toServer, String basePath) 
     throws Exception {
 
     KeyPair kp = null;
@@ -78,8 +79,10 @@ class Client {
     System.out.println("=== GENERATED DH PARAMETERS: ===\n"
                        + dhParams + "\n=========================");
     // === DIFFIE HELLMAN: 2 ===
-    toServer.writeBytes(new String(dhParams.getBytes())); 
-    toServer.writeBytes("\n");
+    //toServer.writeBytes(new String(dhParams.getBytes())); 
+    toServer.write(dhParams.getBytes());
+    //toServer.writeBytes("\n");
+    toServer.write("\n".getBytes());
     toServer.flush();
     // === DIFFIE HELLMAN: 3 ===
     // generate this client's keypair
@@ -116,7 +119,7 @@ class Client {
     return DESSecret;
   }
 
-  public static void doRSAExchange(DataOutputStream toServer, SecretKey DESSecret, String basePath) 
+  public static void doRSAExchange(BufferedOutputStream toServer, SecretKey DESSecret, String basePath) 
     throws Exception {
   
     // === RSA BASED SECRET EXCHANGE ===
@@ -150,11 +153,12 @@ class Client {
     RSA_cipherBytes = CryptoUtil.RSA_encrypt(DESSecret.getEncoded(), otherPublicKey);
     // send over the Ecrypted DES key
     toServer.write(Base64.getEncoder().encode(RSA_cipherBytes));
-    toServer.writeBytes("\n");
+    //toServer.writeBytes("\n");
+    toServer.write("\n".getBytes());
     toServer.flush();
   }
 
-  public static void sendRSAMessage(DataOutputStream toServer, SecretKey secretKey, String basePath) 
+  public static void sendRSAMessage(BufferedOutputStream toServer, SecretKey secretKey, String basePath) 
     throws Exception {
 
     String finalMsg = "";
@@ -188,8 +192,10 @@ class Client {
     System.out.println(finalMsg);
     System.out.println("FINAL MSG PAIR: " + finalMsg + "\n");
     // Send the message
-    toServer.writeBytes(finalMsg);
-    toServer.writeBytes("\n");
+    //toServer.writeBytes(finalMsg);
+    toServer.write(finalMsg.getBytes());
+    //toServer.writeBytes("\n");
+    toServer.write("\n".getBytes());
     toServer.flush();
   }
 
@@ -217,7 +223,7 @@ class Client {
     return false;
   }
 
-  public static void benchMarkCrypto(DataOutputStream toServer, 
+  public static void benchMarkCrypto(BufferedOutputStream toServer, 
       SecretKey DH_DESSecret) throws Exception {
     // === BENCH MARKS 10000 word list ===
     PublicKey RSA_serverPubKey = null;
@@ -245,8 +251,10 @@ class Client {
     wordReader.close();
 
     // Send DES enc words to server for decryption
-    toServer.writeBytes(encWords);
-    toServer.writeBytes("\n");
+    //toServer.writeBytes(encWords);
+    toServer.write(encWords.getBytes());
+    //toServer.writeBytes("\n");
+    toServer.write("\n".getBytes());
     //System.out.println(encWords);
 
     wordReader = new BufferedReader(new FileReader(wordList));
@@ -276,8 +284,10 @@ class Client {
     }
     wordReader.close();
     
-    toServer.writeBytes(encWords);
-    toServer.writeBytes("\n");
+    //toServer.writeBytes(encWords);
+    toServer.write(encWords.getBytes());
+    //toServer.writeBytes("\n");
+    toServer.write("\n".getBytes());
 
     System.out.println("RSA ELAPSED ENCRYPTION TIME: " + RSA_elapsedTime);
 

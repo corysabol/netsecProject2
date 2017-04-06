@@ -1,9 +1,13 @@
 #!/bin/python
 
 import base64
+import binascii
 import os
 
+# Author Cory Sabol
 # prepare a file of ct:pt for DES brute force with Hashcat
+# the format of the resulting dictionary file is:
+# <hexadecimal ciphertext>:<hexadecimal plaintext>
 
 ct = open('b64_DES_10000CipherWords.txt', 'r')
 pt = open('10000words.txt', 'r')
@@ -22,7 +26,7 @@ tmp.close()
 tmp = open('tmp.txt', 'r')
 
 for l in tmp:
-    ctFmat.write(l.strip() + ':' + pt.readline())
+    ctFmat.write(binascii.hexlify(base64.b64decode(l.strip()))+ ':' + binascii.hexlify(pt.readline().strip()) + '\n')
 
 tmp.close()
 os.remove('tmp.txt')
